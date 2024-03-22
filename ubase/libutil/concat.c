@@ -1,21 +1,23 @@
 /* See LICENSE file for copyright and license details. */
-#include <stdio.h>
+#include <unistd.h>
 
-#include "../text.h"
 #include "../util.h"
 
-void
-concat(FILE *fp1, const char *s1, FILE *fp2, const char *s2)
+int
+concat(int f1, const char *s1, int f2, const char *s2)
 {
 	char buf[BUFSIZ];
-	size_t n;
+	ssize_t n;
 
-	while ((n = fread(buf, 1, sizeof(buf), fp1)) > 0) {
-		if (fwrite(buf, 1, n, fp2) != n)
-			eprintf("%s: write error:", s2);
-		if (feof(fp1))
-			break;
+	while ((n = read(f1, buf, sizeof(buf))) > 0) {
+		if (writeall(f2, buf, n) < 0) {
+			weprintf("write %s:", s2);
+			return -2;
+		}
 	}
-	if (ferror(fp1))
-		eprintf("%s: read error:", s1);
+	if (n < 0) {
+		weprintf("read %s:", s1);
+		return -1;
+	}
+	return 0;
 }
