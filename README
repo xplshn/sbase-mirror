@@ -18,6 +18,8 @@ You can also build sbase-box, which generates a single binary containing
 all the required tools. You can then symlink the individual tools to
 sbase-box or run: make sbase-box-install
 
+To run the tools for sbase-box directly use: sbase-box cmd [args]
+
 Ideally you will want to statically link sbase. If you are on Linux we
 recommend using musl-libc[2].
 
@@ -92,8 +94,8 @@ The following tools are implemented:
 0#*|o nl              .
 0=*|o nohup           .
 0=*|o od              .
-0#* o pathchk         .
  #*|o paste           .
+0#* o pathchk         .
 0=*|x printenv        .
 0#*|o printf          .
 0=*|o pwd             .
@@ -108,7 +110,7 @@ The following tools are implemented:
 0=*|x sha1sum         .
 0=* x sha224sum       .
 0=*|x sha256sum       .
-0=* x sha238sum       .
+0=* x sha384sum       .
 0=*|x sha512sum       .
 0=* x sha512-224sum   .
 0=* x sha512-256sum   .
