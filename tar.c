@@ -614,7 +614,7 @@ main(int argc, char *argv[])
 
 		if (filtertool) {
 			fd = tarfd;
-			tarfd = decomp(tarfd, filtertool, "-cd");
+			tarfd = decomp(tarfd, filtertool, "-cdf");
 			close(fd);
 		}
 
