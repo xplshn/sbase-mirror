@@ -201,7 +201,28 @@ archive(const char *path)
 
 	h = (struct header *)b;
 	memset(b, 0, sizeof(b));
-	estrlcpy(h->name,    path,                        sizeof(h->name));
+
+	if (strlen(path) > 255) {
+		const char *reason = "path exceeds 255 character limit";
+		eprintf("malformed tar archive: %s\n", reason);
+	} else if (strlen(path) >= 100) {
+		size_t prefix_len = 155;
+		const char *last_slash = strrchr(path, '/');
+
+		if (last_slash && last_slash < path + prefix_len) {
+		    prefix_len = last_slash - path + 1;
+		}
+
+		/* strlcpy is fine here - for path ONLY -,
+		 * since we're splitting the path.
+		 * It's not an issue if the prefix can't hold
+		 * the full path — name will take the rest. */
+		strlcpy(h->prefix, path, prefix_len);
+		estrlcpy(h->name, path + prefix_len, sizeof(h->name));
+	} else {
+		estrlcpy(h->name, path,		sizeof(h->name));
+	}
+
 	putoctal(h->mode,    (unsigned)st.st_mode & 0777, sizeof(h->mode));
 	putoctal(h->uid,     (unsigned)st.st_uid,         sizeof(h->uid));
 	putoctal(h->gid,     (unsigned)st.st_gid,         sizeof(h->gid));
@@ -456,7 +477,7 @@ xt(int argc, char *argv[], int mode)
 	int i, n;
 	int (*fn)(char *, ssize_t, char[BLKSIZ]) = (mode == 'x') ? unarchive : print;
 
-	while (eread(tarfd, b, BLKSIZ) > 0 && h->name[0]) {
+	while (eread(tarfd, b, BLKSIZ) > 0 && (h->name[0] || h->prefix[0])) {
 		chktar(h);
 		sanitize(h), n = 0;
 
