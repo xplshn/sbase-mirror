@@ -133,6 +133,7 @@ static int pri_mtime  (struct arg *arg);
 static int pri_exec   (struct arg *arg);
 static int pri_ok     (struct arg *arg);
 static int pri_print  (struct arg *arg);
+static int pri_print0 (struct arg *arg);
 static int pri_newer  (struct arg *arg);
 static int pri_depth  (struct arg *arg);
 
@@ -191,6 +192,7 @@ static struct pri_info primaries[] = {
 	{ "-exec"   , pri_exec   , get_exec_arg , free_exec_arg, 1 },
 	{ "-ok"     , pri_ok     , get_ok_arg   , free_ok_arg  , 1 },
 	{ "-print"  , pri_print  , get_print_arg, NULL         , 0 },
+	{ "-print0" , pri_print0 , get_print_arg, NULL         , 0 },
 	{ "-newer"  , pri_newer  , get_newer_arg, NULL         , 1 },
 	{ "-depth"  , pri_depth  , get_depth_arg, NULL         , 0 },
 
@@ -471,6 +473,14 @@ pri_print(struct arg *arg)
 {
 	if (puts(arg->path) == EOF)
 		eprintf("puts failed:");
+	return 1;
+}
+
+static int
+pri_print0(struct arg *arg)
+{
+	if (fwrite(arg->path, strlen(arg->path) + 1, 1, stdout) != 1)
+		eprintf("fwrite failed:");
 	return 1;
 }
 
