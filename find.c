@@ -516,6 +516,7 @@ get_xdev_arg(char *argv[], union extra *extra)
 static char **
 get_perm_arg(char *argv[], union extra *extra)
 {
+	mode_t mask;
 	struct permarg *p = extra->p = emalloc(sizeof(*p));
 
 	if (**argv == '-')
@@ -523,7 +524,10 @@ get_perm_arg(char *argv[], union extra *extra)
 	else
 		p->exact = 1;
 
-	p->mode = parsemode(*argv, 0, 0);
+	mask = umask(0);
+	umask(mask);
+
+	p->mode = parsemode(*argv, 0, mask);
 
 	return argv;
 }
