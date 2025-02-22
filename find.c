@@ -964,6 +964,7 @@ find(char *path, struct findhist *hist)
 
 	if (do_stat(path, &st, hist) < 0) {
 		weprintf("failed to stat %s:", path);
+		gflags.ret = 1;
 		return;
 	}
 
@@ -985,6 +986,7 @@ find(char *path, struct findhist *hist)
 	for (f = hist; f; f = f->next) {
 		if (f->dev == st.st_dev && f->ino == st.st_ino) {
 			weprintf("loop detected '%s' is '%s'\n", path, f->path);
+			gflags.ret = 1;
 			return;
 		}
 	}
@@ -995,6 +997,7 @@ find(char *path, struct findhist *hist)
 
 	if (!(dir = opendir(path))) {
 		weprintf("failed to opendir %s:", path);
+		gflags.ret = 1;
 		/* should we just ignore this since we hit an error? */
 		if (gflags.depth)
 			eval(root, &arg);
@@ -1018,6 +1021,7 @@ find(char *path, struct findhist *hist)
 	free(pathbuf);
 	if (errno) {
 		weprintf("readdir %s:", path);
+		gflags.ret = 1;
 		closedir(dir);
 		return;
 	}
