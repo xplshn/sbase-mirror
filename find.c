@@ -112,6 +112,7 @@ struct findhist {
 
 /* Utility */
 static int spawn(char *argv[]);
+static int do_stat(char *path, struct stat *sb, struct findhist *hist);
 
 /* Primaries */
 static int pri_name   (struct arg *arg);
@@ -252,6 +253,20 @@ spawn(char *argv[])
 	/* FIXME: proper course of action for waitpid() on EINTR? */
 	waitpid(pid, &status, 0);
 	return status;
+}
+
+static int
+do_stat(char *path, struct stat *sb, struct findhist *hist)
+{
+	if (gflags.l || (gflags.h && !hist)) {
+		if (stat(path, sb) == 0) {
+			return 0;
+		} else if (errno != ENOENT && errno != ENOTDIR) {
+			return -1;
+		}
+	}
+
+	return lstat(path, sb);
 }
 
 /*
@@ -664,7 +679,7 @@ get_newer_arg(char *argv[], union extra *extra)
 {
 	struct stat st;
 
-	if (stat(*argv, &st))
+	if (do_stat(*argv, &st, NULL))
 		eprintf("failed to stat '%s':", *argv);
 
 	extra->i = st.st_mtime;
@@ -943,7 +958,7 @@ find(char *path, struct findhist *hist)
 
 	len = strlen(path) + 2; /* \0 and '/' */
 
-	if ((gflags.l || (gflags.h && !hist) ? stat(path, &st) : lstat(path, &st)) < 0) {
+	if (do_stat(path, &st, hist) < 0) {
 		weprintf("failed to stat %s:", path);
 		return;
 	}
