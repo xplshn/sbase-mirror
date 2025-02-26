@@ -180,11 +180,12 @@ static int
 archive(const char *path)
 {
 	char b[BLKSIZ];
+	const char *base, *p;
 	struct group *gr;
 	struct header *h;
 	struct passwd *pw;
 	struct stat st;
-	size_t chksum, i;
+	size_t chksum, i, nlen, plen;
 	ssize_t l, r;
 	int fd = -1;
 
@@ -202,26 +203,26 @@ archive(const char *path)
 	h = (struct header *)b;
 	memset(b, 0, sizeof(b));
 
-	if (strlen(path) > 255) {
-		const char *reason = "path exceeds 255 character limit";
-		eprintf("malformed tar archive: %s\n", reason);
-	} else if (strlen(path) >= 100) {
-		size_t prefix_len = 155;
-		const char *last_slash = strrchr(path, '/');
+	plen = 0;
+	base = path;
+	if ((nlen = strlen(base)) >= sizeof(h->name)) {
+		/*
+		 * Cover case where path name is too long (in which case we
+		 * need to split it to prefix and name).
+		 */
+		if ((base = strrchr(path, '/')) == NULL)
+			goto too_long;
+		for (p = base++; p > path && *p == '/'; --p)
+			;
 
-		if (last_slash && last_slash < path + prefix_len) {
-		    prefix_len = last_slash - path + 1;
-		}
-
-		/* strlcpy is fine here - for path ONLY -,
-		 * since we're splitting the path.
-		 * It's not an issue if the prefix can't hold
-		 * the full path — name will take the rest. */
-		strlcpy(h->prefix, path, prefix_len);
-		estrlcpy(h->name, path + prefix_len, sizeof(h->name));
-	} else {
-		estrlcpy(h->name, path,		sizeof(h->name));
+		nlen -= base - path;
+		plen = p - path + 1;
+		if (nlen >= sizeof(h->name) || plen >= sizeof(h->prefix))
+			goto too_long;
 	}
+
+	memcpy(h->name, base, nlen);
+	memcpy(h->prefix, path, plen);
 
 	putoctal(h->mode,    (unsigned)st.st_mode & 0777, sizeof(h->mode));
 	putoctal(h->uid,     (unsigned)st.st_uid,         sizeof(h->uid));
@@ -270,6 +271,9 @@ archive(const char *path)
 	}
 
 	return 0;
+
+too_long:
+	eprintf("filename too long: %s\n", path);
 }
 
 static int
