@@ -235,8 +235,9 @@ sbase-box-uninstall: sbase-box proto
 	scripts/uninstall proto
 
 dist: clean
-	mkdir -p sbase-$(VERSION)
-	cp -r LICENSE Makefile README TODO config.mk *.c *.1 *.h libutf libutil sbase-$(VERSION)
+	mkdir -p sbase
+	cp -R LICENSE Makefile README TODO config.mk *.c *.1 *.h libutf libutil sbase
+	mv sbase sbase-$(VERSION)
 	tar -cf sbase-$(VERSION).tar sbase-$(VERSION)
 	gzip sbase-$(VERSION).tar
 	rm -rf sbase-$(VERSION)
