@@ -215,7 +215,7 @@ libutil.a: $(LIBUTILOBJ)
 	$(AR) $(ARFLAGS) $@ $?
 	$(RANLIB) $@
 
-getconf.o: getconf.h
+getconf: getconf.h
 
 getconf.h:
 	scripts/getconf.sh > $@
