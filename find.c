@@ -434,7 +434,7 @@ pri_exec(struct arg *arg)
 			**brace = arg->path;
 
 		status = spawn(e->argv);
-		return !!status;
+		return !status;
 	}
 }
 
