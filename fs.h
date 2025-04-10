@@ -28,6 +28,7 @@ enum {
 
 extern int cp_aflag;
 extern int cp_fflag;
+extern int cp_iflag;
 extern int cp_pflag;
 extern int cp_rflag;
 extern int cp_vflag;
