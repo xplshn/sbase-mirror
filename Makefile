@@ -54,6 +54,7 @@ LIBUTILOBJ =\
 	libutil/concat.o\
 	libutil/cp.o\
 	libutil/crypt.o\
+	libutil/confirm.o\
 	libutil/ealloc.o\
 	libutil/enmasse.o\
 	libutil/eprintf.o\
