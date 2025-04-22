@@ -35,8 +35,6 @@ extern int cp_vflag;
 extern int cp_follow;
 extern int cp_status;
 
-extern int rm_fflag;
-extern int rm_rflag;
 extern int rm_status;
 
 extern int recurse_status;
