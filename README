@@ -56,7 +56,7 @@ The following tools are implemented:
 0=*|o cmp             .
 0#*|x cols            .
 0=*|o comm            .
-0=*|o cp              (-i)
+0=*|o cp              .
 0=*|x cron            .
 0#*|o cut             .
 0=*|o date            .
