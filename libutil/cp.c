@@ -44,10 +44,8 @@ cp(const char *s1, const char *s2, int depth)
 	}
 
 	if (cp_iflag && access(s2, F_OK) == 0) {
-		if (!confirm("overwrite '%s'? ", s2)) {
-			cp_status = 1;
+		if (!confirm("overwrite '%s'? ", s2))
 			return 0;
-		}
 	}
 
 	if (cp_vflag)
