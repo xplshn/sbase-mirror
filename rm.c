@@ -7,7 +7,7 @@
 static void
 usage(void)
 {
-	eprintf("usage: %s [-f] [-Rr] file ...\n", argv0);
+	eprintf("usage: %s [-f] [-iRr] file ...\n", argv0);
 }
 
 int
@@ -17,7 +17,10 @@ main(int argc, char *argv[])
 
 	ARGBEGIN {
 	case 'f':
-		r.flags |= SILENT;
+		r.flags |= SILENT | IGNORE;
+		break;
+	case 'i':
+		r.flags |= CONFIRM;
 		break;
 	case 'R':
 	case 'r':
@@ -28,7 +31,7 @@ main(int argc, char *argv[])
 	} ARGEND
 
 	if (!argc) {
-		if (!(r.flags & SILENT))
+		if (!(r.flags & IGNORE))
 			usage();
 		else
 			return 0;
