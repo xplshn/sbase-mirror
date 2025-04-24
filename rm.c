@@ -1,5 +1,6 @@
 /* See LICENSE file for copyright and license details. */
 #include <fcntl.h>
+#include  <string.h>
 
 #include "fs.h"
 #include "util.h"
@@ -37,8 +38,10 @@ main(int argc, char *argv[])
 			return 0;
 	}
 
-	for (; *argv; argc--, argv++)
-		recurse(AT_FDCWD, *argv, NULL, &r);
+	for (; *argv; argc--, argv++) {
+		if (strcmp(*argv, ".") && strcmp(*argv, ".."))
+			recurse(AT_FDCWD, *argv, NULL, &r);
+	}
 
 	return rm_status || recurse_status;
 }
