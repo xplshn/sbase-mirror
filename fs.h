@@ -24,6 +24,8 @@ enum {
 	SAMEDEV  = 1 << 0,
 	DIRFIRST = 1 << 1,
 	SILENT   = 1 << 2,
+	CONFIRM  = 1 << 3,
+	IGNORE   = 1 << 4,
 };
 
 extern int cp_aflag;
@@ -35,8 +37,6 @@ extern int cp_vflag;
 extern int cp_follow;
 extern int cp_status;
 
-extern int rm_fflag;
-extern int rm_rflag;
 extern int rm_status;
 
 extern int recurse_status;
