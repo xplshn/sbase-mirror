@@ -33,7 +33,7 @@ forbidden(char *path, struct stat *root)
 	}
 
 	if (stat(path, &st) < 0)
-		eprintf("stat argument '%s':", path);
+		return 0;
 	if (st.st_dev == root->st_dev && st.st_ino == root->st_ino) {
 		if (!w2)
 			weprintf("\"/\" may not be removed\n");
