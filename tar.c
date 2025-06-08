@@ -186,15 +186,15 @@ static void
 putoctal(char *dst, unsigned num, int size)
 {
 	if (snprintf(dst, size, "%.*o", size - 1, num) >= size)
-		eprintf("snprintf: input number too large\n");
+		eprintf("putoctal: input number '%o' too large\n", num);
 }
 
 static int
 archive(const char *path)
 {
 	static const struct header blank = {
-		"././@LongLink", "0000000" , "0000000", "0000000", "00000000000",
-		"00000000000"  , "        ",  AREG    , ""       , "ustar", "00",
+		"././@LongLink", "0000600", "0000000", "0000000", "00000000000",
+		"00000000000"  , "       ",  AREG    , ""       , "ustar", "00",
 	};
 	char   b[BLKSIZ + BLKSIZ], *p;
 	struct header *h = (struct header *)b;
@@ -221,8 +221,8 @@ archive(const char *path)
 		h->type = 'L';
 		putoctal(h->size,   n,         sizeof(h->size));
 		putoctal(h->chksum, chksum(h), sizeof(h->chksum));
-
 		ewrite(tarfd, (char *)h, BLKSIZ);
+
 		for (p = (char *)path; n > 0; n -= BLKSIZ, p += BLKSIZ) {
 			if (n < BLKSIZ) {
 				p = memcpy(h--, p, n);
@@ -285,7 +285,7 @@ unarchive(char *fname, ssize_t l, char b[BLKSIZ])
 	int  fd = -1, lnk = h->type == SYMLINK;
 
 	if (!mflag && ((mtime = strtol(h->mtime, &p, 8)) < 0 || *p != '\0'))
-		eprintf("strtol %s: invalid number\n", h->mtime);
+		eprintf("strtol %s: invalid mtime\n", h->mtime);
 	if (strcmp(fname, ".") && strcmp(fname, "./") && remove(fname) < 0)
 		if (errno != ENOENT) weprintf("remove %s:", fname);
 
@@ -298,7 +298,7 @@ unarchive(char *fname, ssize_t l, char b[BLKSIZ])
 	case AREG:
 	case RESERVED:
 		if ((mode = strtol(h->mode, &p, 8)) < 0 || *p != '\0')
-			eprintf("strtol %s: invalid number\n", h->mode);
+			eprintf("strtol %s: invalid mode\n", h->mode);
 		fd = open(fname, O_WRONLY | O_TRUNC | O_CREAT, 0600);
 		if (fd < 0)
 			eprintf("open %s:", fname);
@@ -313,7 +313,7 @@ unarchive(char *fname, ssize_t l, char b[BLKSIZ])
 		break;
 	case DIRECTORY:
 		if ((mode = strtol(h->mode, &p, 8)) < 0 || *p != '\0')
-			eprintf("strtol %s: invalid number\n", h->mode);
+			eprintf("strtol %s: invalid mode\n", h->mode);
 		if (mkdir(fname, (mode_t)mode) < 0 && errno != EEXIST)
 			eprintf("mkdir %s:", fname);
 		pushdirtime(fname, mtime);
@@ -321,18 +321,18 @@ unarchive(char *fname, ssize_t l, char b[BLKSIZ])
 	case CHARDEV:
 	case BLOCKDEV:
 		if ((mode = strtol(h->mode, &p, 8)) < 0 || *p != '\0')
-			eprintf("strtol %s: invalid number\n", h->mode);
+			eprintf("strtol %s: invalid mode\n", h->mode);
 		if ((major = strtol(h->major, &p, 8)) < 0 || *p != '\0')
-			eprintf("strtol %s: invalid number\n", h->major);
+			eprintf("strtol %s: invalid major device\n", h->major);
 		if ((minor = strtol(h->minor, &p, 8)) < 0 || *p != '\0')
-			eprintf("strtol %s: invalid number\n", h->minor);
+			eprintf("strtol %s: invalid minor device\n", h->minor);
 		type = (h->type == CHARDEV) ? S_IFCHR : S_IFBLK;
 		if (mknod(fname, type | mode, makedev(major, minor)) < 0)
 			eprintf("mknod %s:", fname);
 		break;
 	case FIFO:
 		if ((mode = strtol(h->mode, &p, 8)) < 0 || *p != '\0')
-			eprintf("strtol %s: invalid number\n", h->mode);
+			eprintf("strtol %s: invalid mode\n", h->mode);
 		if (mknod(fname, S_IFIFO | mode, 0) < 0)
 			eprintf("mknod %s:", fname);
 		break;
@@ -341,9 +341,9 @@ unarchive(char *fname, ssize_t l, char b[BLKSIZ])
 	}
 
 	if ((uid = strtol(h->uid, &p, 8)) < 0 || *p != '\0')
-		eprintf("strtol %s: invalid number\n", h->uid);
+		eprintf("strtol %s: invalid uid\n", h->uid);
 	if ((gid = strtol(h->gid, &p, 8)) < 0 || *p != '\0')
-		eprintf("strtol %s: invalid number\n", h->gid);
+		eprintf("strtol %s: invalid gid\n", h->gid);
 
 	if (fd != -1) {
 		for (; l > 0; l -= BLKSIZ)
@@ -404,7 +404,7 @@ c(int dirfd, const char *name, struct stat *st, void *data, struct recursor *r)
 static void
 sanitize(struct header *h)
 {
-	size_t i, j;
+	size_t i, j, l;
 	struct {
 		char  *f;
 		size_t l;
@@ -423,10 +423,14 @@ sanitize(struct header *h)
 	 * NULs as per the ustar specification.  Patch all of them to
 	 * use NULs so we can perform string operations on them. */
 	for (i = 0; i < LEN(fields); i++){
-		for (j = 0; j < fields[i].l && fields[i].f[j] == ' '; j++);
-		for (; j < fields[i].l; j++)
+		j = 0, l = fields[i].l - 1;
+		for (; j < l && fields[i].f[j] == ' '; j++);
+		for (; j <= l; j++)
 			if (fields[i].f[j] == ' ')
 				fields[i].f[j] = '\0';
+		if (fields[i].f[l])
+			eprintf("numeric field #%d (%.*s) is not null or space terminated\n",
+			        i, l+1, fields[i].f);
 	}
 }
 
@@ -434,7 +438,7 @@ static void
 chktar(struct header *h)
 {
 	const char *reason;
-	char tmp[sizeof h->chksum], *err = "";
+	char tmp[sizeof h->chksum], *err;
 	long sum, i;
 
 	if (h->prefix[0] == '\0' && h->name[0] == '\0') {
@@ -482,13 +486,13 @@ xt(int argc, char *argv[], int mode)
 		if ((size = strtol(h->size, &p, 8)) < 0 || *p != '\0')
 			eprintf("strtol %s: invalid size\n", h->size);
 
-		/* Long file path is read direcly into fname*/
+		/* Long file path is read directly into fname*/
 		if (h->type == 'L' || h->type == 'x' || h->type == 'g') {
 
 			/* Read header only up to size of fname buffer */
 			for (q = fname; q < fname+size; q += BLKSIZ) {
 				if (q + BLKSIZ >= fname + l)
-					eprintf("name exceeds buffer: %s\n", fname);
+					eprintf("name exceeds buffer: %.*s\n", q-fname, fname);
 				eread(tarfd, q, BLKSIZ);
 			}
 
