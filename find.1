@@ -36,9 +36,13 @@ True if the name of the file matches the given pattern.
 .It Fl path Ar pattern
 True if the path to the file matches the given pattern.
 .It Fl nouser
-True if the file belongs to a user for which getpwuid() returns NULL.
+True if the file belongs to a user for which
+.Xr getpwuid 3
+returns NULL.
 .It Fl nogroup
-True if the file belongs to a group for which getgrgid() returns NULL.
+True if the file belongs to a group for which
+.Xr getgrgid 3
+returns NULL.
 .It Fl xdev
 True.
 Do not enter directory on a different device.
