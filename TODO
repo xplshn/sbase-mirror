@@ -85,3 +85,8 @@ tr
 sbase-box
 ---------
 * List of commands does not contain `install` (only `xinstall`).
+
+
+xargs
+-----
+* Add -L.
