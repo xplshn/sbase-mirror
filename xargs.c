@@ -257,11 +257,8 @@ main(int argc, char *argv[])
 		while (leftover || (arg = poparg())) {
 			arglen = strlen(arg);
 			if (argsz + arglen >= argmaxsz || i >= NARGS - 1) {
-				if (arglen >= argmaxsz) {
-					weprintf("insufficient argument space\n");
-					if (xflag)
-						exit(1);
-				}
+				if (xflag || arglen >= argmaxsz || leftover)
+					eprintf("insufficient argument space\n");
 				leftover = 1;
 				break;
 			}
