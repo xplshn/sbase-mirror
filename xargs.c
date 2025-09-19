@@ -108,6 +108,14 @@ poparg(void)
 	if (eatspace() < 0)
 		return NULL;
 	while ((ch = inputc()) != EOF) {
+		/* NUL separator: no escaping */
+		if (nulflag) {
+			if (ch == '\0')
+				goto out;
+			else
+				goto fill;
+		}
+
 		switch (ch) {
 		case ' ':
 		case '\t':
@@ -127,10 +135,6 @@ poparg(void)
 			if (parseescape() < 0)
 				eprintf("backslash at EOF\n");
 			break;
-		case '\0':
-			/* NUL separator: no escaping */
-			if (nulflag)
-				goto out;
 		default:
 		fill:
 			fillargbuf(ch);
