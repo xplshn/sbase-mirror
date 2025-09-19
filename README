@@ -140,7 +140,7 @@ The following tools are implemented:
 0#*|o wc              .
 0=*|x which           .
 0=*|x whoami          .
-0=*|o xargs           (-p)
+0=*|o xargs           .
 0=*|x yes             .
 
 [1] http://git.suckless.org/ubase/
