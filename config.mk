@@ -9,7 +9,7 @@ MANPREFIX = $(PREFIX)/share/man
 #CC =
 #AR =
 RANLIB = ranlib
-SMAKE = scripts/make
+SMAKE = $(MAKE)
 
 # -lrt might be needed on some systems
 # CFLAGS   =
