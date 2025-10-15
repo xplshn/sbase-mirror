@@ -1,8 +1,11 @@
 *.o
+/scripts/make
 /build
+/make/make
 /getconf.h
 /libutf.a
 /libutil.a
+/proto
 /basename
 /cal
 /cat

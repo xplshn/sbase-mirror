@@ -131,6 +131,7 @@ BIN =\
 	logger\
 	logname\
 	ls\
+	make/make\
 	md5sum\
 	mkdir\
 	mkfifo\
@@ -191,9 +192,20 @@ BIN =\
 	xinstall\
 	yes
 
-OBJ = $(LIBUTFOBJ) $(LIBUTILOBJ)
+MAKEOBJ =\
+	make/defaults.o\
+	make/main.o\
+	make/parser.o\
+	make/posix.o\
+	make/rules.o\
 
-all: $(BIN)
+OBJ = $(LIBUTFOBJ) $(LIBUTILOBJ) $(MAKEOBJ)
+
+all: scripts/make
+	$(SMAKE) $(BIN)
+
+scripts/make:
+	$(CC) -o $@ make/*.c
 
 $(BIN): $(LIB)
 
@@ -207,6 +219,11 @@ $(OBJ) $(BIN): $(HDR)
 
 .c:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $< $(LIB)
+
+$(MAKEOBJ): make/make.h
+
+make/make: $(MAKEOBJ)
+	$(CC) $(LDFLAGS) -o $@ $(MAKEOBJ) $(LIB)
 
 libutf.a: $(LIBUTFOBJ)
 	$(AR) $(ARFLAGS) $@ $?
@@ -237,7 +254,7 @@ sbase-box-uninstall: sbase-box proto
 
 dist: clean
 	mkdir -p sbase
-	cp -R LICENSE Makefile README TODO config.mk *.c *.1 *.h libutf libutil sbase
+	cp -R LICENSE Makefile README TODO config.mk *.c *.1 *.h libutf libutil make sbase
 	mv sbase sbase-$(VERSION)
 	tar -cf sbase-$(VERSION).tar sbase-$(VERSION)
 	gzip sbase-$(VERSION).tar
@@ -249,6 +266,7 @@ sbase-box: $(BIN)
 
 clean:
 	rm -f $(BIN) $(OBJ) $(LIB) sbase-box sbase-$(VERSION).tar.gz
+	rm -f scripts/make
 	rm -f getconf.h
 	rm -f proto
 	rm -rf build

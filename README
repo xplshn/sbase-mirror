@@ -84,6 +84,7 @@ The following tools are implemented:
 0=*|o logger          .
 0=*|o logname         .
 0#* o ls              (-C, -k, -m, -p, -s, -x)
+  * o make            (-j)
 0=*|x md5sum          .
 0=*|o mkdir           .
 0=*|o mkfifo          .
