@@ -49,7 +49,7 @@ static regmatch_t matchs[10];
 static String lastre;
 
 static int optverbose, optprompt, exstatus, optdiag = 1;
-static int marks['z' - 'a'];
+static int marks['z' - 'a' + 1];
 static int nlines, line1, line2;
 static int curln, lastln, ocurln, olastln;
 static jmp_buf savesp;
