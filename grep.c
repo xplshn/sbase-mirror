@@ -10,7 +10,7 @@
 
 enum { Match = 0, NoMatch = 1, Error = 2 };
 
-static void addpattern(const char *, size_t);
+static void addpattern(const char *);
 static void addpatternfile(FILE *);
 static int grep(FILE *, const char *);
 
@@ -37,36 +37,26 @@ struct pattern {
 static SLIST_HEAD(phead, pattern) phead;
 
 static void
-addpattern(const char *pattern, size_t patlen)
+addpattern(const char *pattern)
 {
 	struct pattern *pnode;
 	char *tmp;
 	int bol, eol;
-	size_t len;
+	size_t len, patlen;
 
-	if (!patlen)
-		return;
-
-	/* a null BRE/ERE matches every line */
-	if (!Fflag)
-		if (pattern[0] == '\0')
-			pattern = "^";
+	patlen = strlen(pattern);
+	bol = pattern[0] == '^';
+	eol = patlen > 0 && pattern[patlen - 1] == '$')
 
 	if (!Fflag && xflag) {
 		tmp = enmalloc(Error, patlen + 3);
 		snprintf(tmp, patlen + 3, "%s%s%s",
-			 pattern[0] == '^' ? "" : "^",
+			 bol ? "" : "^",
 			 pattern,
-			 pattern[patlen - 1] == '$' ? "" : "$");
+			 eol ? "" : "$");
 	} else if (!Fflag && wflag) {
 		len = patlen + 5 + (Eflag ? 2 : 4);
 		tmp = enmalloc(Error, len);
-
-		bol = eol = 0;
-		if (pattern[0] == '^')
-			bol = 1;
-		if (pattern[patlen - 1] == '$')
-			eol = 1;
 
 		snprintf(tmp, len, "%s\\<%s%.*s%s\\>%s",
 		         bol ? "^" : "",
@@ -93,7 +83,7 @@ addpatternfile(FILE *fp)
 	while ((len = getline(&buf, &size, fp)) > 0) {
 		if (len > 0 && buf[len - 1] == '\n')
 			buf[len - 1] = '\0';
-		addpattern(buf, (size_t)len);
+		addpattern(buf);
 	}
 	if (ferror(fp))
 		enprintf(Error, "read error:");
