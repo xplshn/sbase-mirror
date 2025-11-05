@@ -191,15 +191,15 @@ main(int argc, char *argv[])
 		usage();
 	} ARGEND
 
-	if (!argc || argc > 2 || (argc == 1 && dflag == sflag))
+	if (!argc || argc > 2 || (dflag == sflag && argc != 2) ||
+	    (dflag && argc != 1))
 		usage();
-	set1ranges = makeset(argv[0], &set1, &set1check);
-	if (argc == 2)
-		set2ranges = makeset(argv[1], &set2, &set2check);
 
-	if (!dflag || (argc == 2 && sflag)) {
+	set1ranges = makeset(argv[0], &set1, &set1check);
+	if (argc == 2) {
+		set2ranges = makeset(argv[1], &set2, &set2check);
 		/* sanity checks as we are translating */
-		if (!sflag && !set2ranges && !set2check)
+		if (!set2ranges && !set2check)
 			eprintf("cannot map to an empty set.\n");
 		if (set2check && set2check != islowerrune &&
 		    set2check != isupperrune) {
