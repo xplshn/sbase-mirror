@@ -46,7 +46,7 @@ addpattern(const char *pattern)
 
 	patlen = strlen(pattern);
 	bol = pattern[0] == '^';
-	eol = patlen > 0 && pattern[patlen - 1] == '$')
+	eol = patlen > 0 && pattern[patlen - 1] == '$';
 
 	if (!Fflag && xflag) {
 		tmp = enmalloc(Error, patlen + 3);
