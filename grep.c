@@ -41,31 +41,20 @@ addpattern(const char *pattern)
 {
 	struct pattern *pnode;
 	char *tmp;
-	int bol, eol;
-	size_t len, patlen;
+	size_t patlen;
 
 	patlen = strlen(pattern);
-	bol = pattern[0] == '^';
-	eol = patlen > 0 && pattern[patlen - 1] == '$';
 
-	if (!Fflag && xflag) {
-		tmp = enmalloc(Error, patlen + 3);
-		snprintf(tmp, patlen + 3, "%s%s%s",
-			 bol ? "" : "^",
-			 pattern,
-			 eol ? "" : "$");
-	} else if (!Fflag && wflag) {
-		len = patlen + 5 + (Eflag ? 2 : 4);
-		tmp = enmalloc(Error, len);
-
-		snprintf(tmp, len, "%s\\<%s%.*s%s\\>%s",
-		         bol ? "^" : "",
-		         Eflag ? "(" : "\\(",
-		         (int)patlen - bol - eol, pattern + bol,
-		         Eflag ? ")" : "\\)",
-		         eol ? "$" : "");
-	} else {
+	if (Fflag || (!xflag && !wflag)) {
 		tmp = enstrdup(Error, pattern);
+	} else {
+		tmp = enmalloc(Error, patlen + 9);
+		sprintf(tmp, "%s%s%s%s%s",
+			xflag ? "^" : "\\<",
+			Eflag ? "(" : "\\(",
+			pattern,
+			Eflag ? ")" : "\\)",
+			xflag ? "$" : "\\>");
 	}
 
 	pnode = enmalloc(Error, sizeof(*pnode));
