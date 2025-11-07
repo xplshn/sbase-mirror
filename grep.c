@@ -29,9 +29,9 @@ static int many;
 static int mode;
 
 struct pattern {
-	char *pattern;
 	regex_t preg;
 	SLIST_ENTRY(pattern) entry;
+	char pattern[];
 };
 
 static SLIST_HEAD(phead, pattern) phead;
@@ -40,26 +40,23 @@ static void
 addpattern(const char *pattern)
 {
 	struct pattern *pnode;
-	char *tmp;
 	size_t patlen;
 
 	patlen = strlen(pattern);
 
+	pnode = enmalloc(Error, sizeof(*pnode) + patlen + 9);
+	SLIST_INSERT_HEAD(&phead, pnode, entry);
+
 	if (Fflag || (!xflag && !wflag)) {
-		tmp = enstrdup(Error, pattern);
+		memcpy(pnode->pattern, pattern, patlen + 1);
 	} else {
-		tmp = enmalloc(Error, patlen + 9);
-		sprintf(tmp, "%s%s%s%s%s",
+		sprintf(pnode->pattern, "%s%s%s%s%s",
 			xflag ? "^" : "\\<",
 			Eflag ? "(" : "\\(",
 			pattern,
 			Eflag ? ")" : "\\)",
 			xflag ? "$" : "\\>");
 	}
-
-	pnode = enmalloc(Error, sizeof(*pnode));
-	pnode->pattern = tmp;
-	SLIST_INSERT_HEAD(&phead, pnode, entry);
 }
 
 static void
@@ -70,7 +67,7 @@ addpatternfile(FILE *fp)
 	ssize_t len = 0;
 
 	while ((len = getline(&buf, &size, fp)) > 0) {
-		if (len > 0 && buf[len - 1] == '\n')
+		if (buf[len - 1] == '\n')
 			buf[len - 1] = '\0';
 		addpattern(buf);
 	}
@@ -90,7 +87,7 @@ grep(FILE *fp, const char *str)
 
 	for (n = 1; (len = getline(&buf, &size, fp)) > 0; n++) {
 		/* Remove the trailing newline if one is present. */
-		if (len && buf[len - 1] == '\n')
+		if (buf[len - 1] == '\n')
 			buf[len - 1] = '\0';
 		match = 0;
 		SLIST_FOREACH(pnode, &phead, entry) {
