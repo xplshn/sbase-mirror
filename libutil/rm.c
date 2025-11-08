@@ -28,7 +28,7 @@ rm(int dirfd, const char *name, struct stat *st, void *data, struct recursor *r)
 	}
 
 	if (!quiet && (!write && isatty(0) || ask)) {
-		if (!confirm("remove file '%s'", r->path));
+		if (!confirm("remove file '%s'? ", r->path))
 			return;
 	}
 

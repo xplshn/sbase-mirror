@@ -254,7 +254,7 @@ sbase-box-uninstall: sbase-box proto
 
 dist: clean
 	mkdir -p sbase
-	cp -R LICENSE Makefile README TODO config.mk *.c *.1 *.h libutf libutil make sbase
+	cp -R LICENSE Makefile README TODO config.mk *.c *.1 *.h libutf libutil make scripts sbase
 	mv sbase sbase-$(VERSION)
 	tar -cf sbase-$(VERSION).tar sbase-$(VERSION)
 	gzip sbase-$(VERSION).tar

@@ -49,7 +49,7 @@ static regmatch_t matchs[10];
 static String lastre;
 
 static int optverbose, optprompt, exstatus, optdiag = 1;
-static int marks['z' - 'a'];
+static int marks['z' - 'a' + 1];
 static int nlines, line1, line2;
 static int curln, lastln, ocurln, olastln;
 static jmp_buf savesp;
@@ -1383,7 +1383,7 @@ repeat:
 	      		join();
 		break;
 	case 'z':
-		if (nlines > 1)
+		if (nlines != 1)
 			goto bad_address;
 		if (isdigit(back(input())))
 			num = getnum();
@@ -1393,7 +1393,7 @@ repeat:
 		scroll(num);
 		break;
 	case 'k':
-		if (nlines > 1)
+		if (nlines != 1)
 			goto bad_address;
 		if (!islower(c = input()))
 			error("invalid mark character");
