@@ -74,8 +74,6 @@ printf
 * Flags for string conversion-specifier (%s) are not supported.
 * Escape sequences that expand to '%' are treated as beginning of
   conversion specification.
-* An trailing '%' at the end of a format string causes a read past
-  the end of the string.
 
 tr
 --
