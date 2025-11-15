@@ -202,7 +202,7 @@ MAKEOBJ =\
 OBJ = $(LIBUTFOBJ) $(LIBUTILOBJ) $(MAKEOBJ)
 
 all: scripts/make
-	$(SMAKE) $(BIN)
+	+@$(SMAKE) $(BIN)
 
 scripts/make:
 	$(CC) -o $@ make/*.c
@@ -252,9 +252,13 @@ sbase-box-uninstall: sbase-box proto
 	$(DESTDIR)$(PREFIX)/bin/sbase-box -d $(DESTDIR)$(PREFIX)/bin/
 	scripts/uninstall proto
 
+tests: all
+	@cd $@ && $(MAKE)
+
 dist: clean
 	mkdir -p sbase
-	cp -R LICENSE Makefile README TODO config.mk *.c *.1 *.h libutf libutil make scripts sbase
+	cp LICENSE Makefile README TODO config.mk *.c *.1 *.h  sbase
+	cp -R libutf libutil make scripts tests sbase
 	mv sbase sbase-$(VERSION)
 	tar -cf sbase-$(VERSION).tar sbase-$(VERSION)
 	gzip sbase-$(VERSION).tar
@@ -265,6 +269,7 @@ sbase-box: $(BIN)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ build/*.c $(LIB)
 
 clean:
+	@cd tests && $(MAKE) clean
 	rm -f $(BIN) $(OBJ) $(LIB) sbase-box sbase-$(VERSION).tar.gz
 	rm -f scripts/make
 	rm -f getconf.h

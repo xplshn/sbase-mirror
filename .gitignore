@@ -104,3 +104,5 @@
 /xargs
 /xinstall
 /yes
+/tests/test.log
+/tests/test.lst
