@@ -799,10 +799,10 @@ static void
 doread(const char *fname)
 {
 	size_t cnt;
-	ssize_t n;
+	ssize_t len;
 	char *p;
 	FILE *aux;
-	static size_t len;
+	static size_t n;
 	static char *s;
 	static FILE *fp;
 
@@ -812,16 +812,16 @@ doread(const char *fname)
 		error("cannot open input file");
 
 	curln = line2;
-	for (cnt = 0; (n = getline(&s, &len, fp)) > 0; cnt += (size_t)n) {
+	for (cnt = 0; (len = getline(&s, &n, fp)) > 0; cnt += (size_t)len) {
 		chksignals();
-		if (s[n-1] != '\n') {
-			if (n + 1 >= len) {
-				if (len == SIZE_MAX || !(p = realloc(s, ++len)))
+		if (s[len-1] != '\n') {
+			if (len+1 >= n) {
+				if (n == SIZE_MAX || !(p = realloc(s, ++n)))
 					error("out of memory");
 				s = p;
 			}
-			s[n] = '\n';
-			s[n+1] = '\0';
+			s[len] = '\n';
+			s[len+1] = '\0';
 		}
 		inject(s, AFTER);
 	}
