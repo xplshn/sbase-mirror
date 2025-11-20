@@ -1013,7 +1013,6 @@ join(void)
 	addchar('\0', &s);
 	delete(line1, line2);
 	inject(s.str, BEFORE);
-	free(s.str);
 }
 
 static void
