@@ -2,10 +2,10 @@
 
 set -e
 
-exp1=exp1.$$
-exp2=exp2.$$
-res1=res1.$$
-res2=res2.$$
+exp1=tmp1.$$
+exp2=tmp2.$$
+res1=tmp3.$$
+res2=tmp4.$$
 
 cleanup()
 {
