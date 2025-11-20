@@ -12,7 +12,7 @@ cleanup()
 	exit $st
 }
 
-trap cleanup EXIT HUP INT TERM
+trap cleanup EXIT
 
 cat <<EOF >$tmp1
 foo
