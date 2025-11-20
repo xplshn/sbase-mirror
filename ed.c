@@ -442,6 +442,7 @@ static int
 match(int num)
 {
 	lastmatch = gettxt(num);
+	text.str[text.siz - 2] = '\0';
 	return !regexec(pattern, lastmatch, 10, matchs, 0);
 }
 
@@ -814,11 +815,13 @@ doread(const char *fname)
 	for (cnt = 0; (n = getline(&s, &len, fp)) > 0; cnt += (size_t)n) {
 		chksignals();
 		if (s[n-1] != '\n') {
-			if (len == SIZE_MAX || !(p = realloc(s, ++len)))
-				error("out of memory");
-			s = p;
-			s[n-1] = '\n';
-			s[n] = '\0';
+			if (n + 1 >= len) {
+				if (len == SIZE_MAX || !(p = realloc(s, ++len)))
+					error("out of memory");
+				s = p;
+			}
+			s[n] = '\n';
+			s[n+1] = '\0';
 		}
 		inject(s, AFTER);
 	}
