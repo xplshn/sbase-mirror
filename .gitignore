@@ -7,6 +7,8 @@
 /libutil.a
 /proto
 /basename
+/bc
+/bc.c
 /cal
 /cat
 /chgrp

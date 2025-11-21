@@ -2,7 +2,7 @@
 include config.mk
 
 .SUFFIXES:
-.SUFFIXES: .o .c
+.SUFFIXES: .y .o .c
 
 CPPFLAGS =\
 	-D_DEFAULT_SOURCE \
@@ -94,6 +94,7 @@ LIB = libutf.a libutil.a
 
 BIN =\
 	basename\
+	bc\
 	cal\
 	cat\
 	chgrp\
@@ -220,6 +221,9 @@ $(OBJ) $(BIN): $(HDR)
 .c:
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $< $(LIB)
 
+bc: bc.c
+	$(CC) $(LDFLAGS) -o $@ bc.c $(LIB)
+
 $(MAKEOBJ): make/make.h
 
 make/make: $(MAKEOBJ)
@@ -272,7 +276,7 @@ clean:
 	@cd tests && $(MAKE) clean
 	rm -f $(BIN) $(OBJ) $(LIB) sbase-box sbase-$(VERSION).tar.gz
 	rm -f scripts/make
-	rm -f getconf.h
+	rm -f getconf.h bc.c
 	rm -f proto
 	rm -rf build
 
