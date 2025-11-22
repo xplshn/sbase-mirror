@@ -46,6 +46,7 @@ static void writeout(char *);
 
 static size_t used;
 static char *yytext, *buff;
+static char *filename = "<stdin>";
 static int lineno, nerr;
 static jmp_buf recover;
 static int nested;
@@ -62,7 +63,6 @@ int cflag, dflag, lflag, sflag;
 %token <id> ID
 %token <str> STRING NUMBER
 %token <str> EQOP '+' '-' '*' '/' '%' '^' INCDEC
-%token EOFTOK
 %token EQ
 %token LE
 %token GE
@@ -96,7 +96,7 @@ int cflag, dflag, lflag, sflag;
 
 %%
 
-program  : EOFTOK               {quit();}
+program  :
          | item program
          ;
 
@@ -104,17 +104,17 @@ item     : scolonlst '\n'       {used = 0;}
          | function             {writeout($1); used = 0;}
          ;
 
-scolonlst: /* empty */
+scolonlst:
          | stat                 {writeout($1);}
          | scolonlst ';' stat   {writeout($3);}
          | scolonlst ';'
          ;
 
-statlst : /* empty */           {$$ = code("");}
+statlst :                       {$$ = code("");}
         | stat
         | statlst '\n' stat     {$$ = code("%s%s", $1, $3);}
         | statlst ';' stat      {$$ = code("%s%s", $1, $3);}
-        | statlst '\n' 
+        | statlst '\n'
         | statlst ';'
         ;
 
@@ -147,7 +147,7 @@ parlst  : '(' ')'               {$$ = "%s";}
         | '(' locals ')'        {$$ = $2;}
         ;
 
-autolst : /* empty */           {$$ = "%s";}
+autolst :                       {$$ = "%s";}
         | AUTO locals '\n'      {$$ = $2;}
         | AUTO locals ';'       {$$ = $2;}
         ;
@@ -233,7 +233,7 @@ ary     : '[' expr ']'          {$$ = $2;}
 static int
 yyerror(char *s)
 {
-	fprintf(stderr, "bc: %s:%d:%s\n", "<stdin>", lineno, s);
+	fprintf(stderr, "bc: %s:%d:%s\n", filename, lineno, s);
 	nerr++;
 	longjmp(recover, 1);
 }
@@ -600,7 +600,7 @@ repeat:
 
 	ch = getchar();
 	if (ch == EOF) {
-		return EOFTOK;
+		return EOF;
 	} else if (!isascii(ch)) {
 		yyerror("invalid input character");
 	} else if (islower(ch)) {
@@ -654,7 +654,8 @@ spawn(void)
 static void
 init(void)
 {
-	nested = used = 0;
+	used = 0;
+
 	if (!yytext)
 		yytext = malloc(BUFSIZ);
 	if (!buff)
@@ -666,11 +667,29 @@ init(void)
 static int
 run(void)
 {
+	if (feof(stdin))
+		return 0;
+
 	if (setjmp(recover))
 		return 1;
 
 	yyparse();
 	return 1;
+}
+
+static void
+bc(char *fname)
+{
+	lineno = 0;
+	if (fname) {
+		filename = fname;
+		if (!freopen(fname, "r", stdin))
+			eprintf("bc: %s:", fname);
+	}
+
+	for (init(); run(); init())
+		;
+	nested = used = 0;
 }
 
 static void
@@ -703,6 +722,12 @@ main(int argc, char *argv[])
 	if (!cflag)
 		spawn();
 
-	for (init(); run(); init())
-		;
+	if (*argv == NULL) {
+		bc(NULL);
+	} else {
+		while (*argv)
+			bc(*argv++);
+	}
+
+	quit();
 }
