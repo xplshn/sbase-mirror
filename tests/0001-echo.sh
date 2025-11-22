@@ -2,22 +2,19 @@
 
 set -e
 
-tmp1=tmp1.$$
-tmp2=tmp2.$$
+tmp=tmp1.$$
 
 cleanup()
 {
 	st=$?
-	rm -f $tmp1 $tmp2
+	rm -f $tmp
 	exit $st
 }
 
-trap cleanup EXIT HUP INT TERM
+trap cleanup EXIT
 
-cat <<'EOF' | tr -d '\n' > $tmp1
+../echo -n --hello-- --world--! > $tmp
+
+tr -d '\n' <<'EOF' | diff -u - $tmp
 --hello-- --world--!
 EOF
-
-../echo -n --hello-- --world--! > $tmp2
-
-diff -u $tmp1 $tmp2

@@ -2,32 +2,17 @@
 
 set -e
 
-exp1=exp1.$$
-exp2=exp2.$$
-res1=res1.$$
-res2=res2.$$
+res1=tmp1.$$
+res2=tmp2.$$
 
 cleanup()
 {
 	st=$?
-	rm -f $exp1 $exp2 $res1 $res2
+	rm -f $res1 $res2
 	exit $st
 }
 
-trap cleanup EXIT HUP INT TERM
-
-cat <<'EOF' > $exp1
-123
-0
-foo
-bar
-+001   +2 +003 -400 
-Expected failure
-EOF
-
-cat <<'EOF' > $exp2
-../printf: Missing format specifier.
-EOF
+trap cleanup EXIT
 
 (
 	../printf '123\n'
@@ -40,5 +25,15 @@ EOF
 	../printf '%000' FOO || echo "Expected failure"
 ) > $res1 2> $res2
 
-diff -u $exp1 $res1
-diff -u $exp2 $res2
+diff -u - $res1 <<'EOF'
+123
+0
+foo
+bar
++001   +2 +003 -400 
+Expected failure
+EOF
+  
+diff -u - $res2 <<'EOF'
+../printf: Missing format specifier.
+EOF

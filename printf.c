@@ -131,7 +131,7 @@ main(int argc, char *argv[])
 			free(rarg);
 			break;
 		case 's':
-			fmt = emalloc(sizeof("%*.*s" + nflags));
+			fmt = emalloc(sizeof("%*.*s") + nflags);
 			sprintf(fmt, "%%%.*s*.*s", (int)nflags, &format[f]);
 			printf(fmt, width, precision, arg);
 			free(fmt);
