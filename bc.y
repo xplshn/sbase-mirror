@@ -1,4 +1,5 @@
 %{
+#define _XOPEN_SOURCE
 #include <unistd.h>
 
 #include <ctype.h>
@@ -10,6 +11,7 @@
 #include <string.h>
 
 #include "arg.h"
+#include "util.h"
 
 #define DIGITS   "0123456789ABCDEF"
 
@@ -44,7 +46,7 @@ static char *ary(char *);
 static void writeout(char *);
 
 static size_t used;
-static char yytext[BUFSIZ], buff[BUFSIZ];
+static char *yytext, *buff;
 static int lineno, nerr;
 static jmp_buf recover;
 static int nested;
@@ -247,8 +249,7 @@ writeout(char *s)
 	return;
 	
 err:
-	perror("bc:writing to dc");
-	exit(1);
+	eprintf("bc:writing to dc:");
 }
 
 static char *
@@ -259,14 +260,12 @@ code(char *fmt, ...)
 	size_t n, room;
 
 	va_start(va, fmt);
-	room = sizeof(buff) - used;
+	room = BUFSIZ - used;
 	n = vsnprintf(buff+used, room, fmt, va);
 	va_end(va);
 
-	if (n < 0 || n >= room) {
-		fprintf(stderr, "bc: unable to code requested operation\n");
-		exit(1);
-	}
+	if (n < 0 || n >= room)
+		eprintf("bc: unable to code requested operation\n");
 
 	s = buff + used;
 	used += n + 1;
@@ -426,14 +425,14 @@ iden(int ch)
 	char *bp;
 
 	ungetc(ch, stdin);
-	for (bp = yytext; bp < &yytext[sizeof(yytext)]; ++bp) {
+	for (bp = yytext; bp < &yytext[BUFSIZ]; ++bp) {
 		ch = getchar();
 		if (!islower(ch))
 			break;
 		*bp = ch;
 	}
 
-	if (bp == &yytext[sizeof(yytext)])
+	if (bp == &yytext[BUFSIZ])
 		yyerror("too long token");
 	*bp = '\0';
 	ungetc(ch, stdin);
@@ -458,7 +457,7 @@ digits(char *bp)
 	int ch;
 	char *digits = DIGITS, *p;
 
-	while (bp < &yytext[sizeof(yytext)]) {
+	while (bp < &yytext[BUFSIZ]) {
 		ch = getchar();
 		p = strchr(digits, ch);
 		if (!p)
@@ -466,7 +465,7 @@ digits(char *bp)
 		*bp++ = ch;
 	}
 
-	if (bp == &yytext[sizeof(yytext)])
+	if (bp == &yytext[BUFSIZ])
 		return NULL;
 	ungetc(ch, stdin);
 
@@ -493,7 +492,7 @@ number(int ch)
 		goto toolong;
 
 end:
-	if (bp ==  &yytext[sizeof(yytext)])
+	if (bp ==  &yytext[BUFSIZ])
 		goto toolong;
 	*bp = '\0';
 	yylval.str = yytext;
@@ -509,13 +508,13 @@ string(int ch)
 {
 	char *bp;
 
-	for (bp = yytext; bp < &yytext[sizeof(yytext)]; ++bp) {
+	for (bp = yytext; bp < &yytext[BUFSIZ]; ++bp) {
 		if ((ch = getchar()) == '"')
 			break;
 		*bp = ch;
 	}
 
-	if (bp == &yytext[sizeof(yytext)])
+	if (bp == &yytext[BUFSIZ])
 		yyerror("bc:too long string");
 	*bp = '\0';
 	yylval.str = yytext;
@@ -628,15 +627,12 @@ spawn(void)
 	int fds[2];
 	char errmsg[] = "bc:error execing dc\n";
 
-	if (pipe(fds) < 0) {
-		perror("bc:creating pipe");
-		exit(1);
-	}
+	if (pipe(fds) < 0)
+		eprintf("bc:creating pipe:");
 
 	switch (fork()) {
 	case -1:
-		perror("bc:forking dc");
-		exit(1);
+		eprintf("bc:forking dc:");
 	case 0:
 		close(1);
 		dup(fds[1]);
@@ -659,6 +655,13 @@ spawn(void)
 static void
 init(void)
 {
+	nested = used = 0;
+	if (!yytext)
+		yytext = malloc(BUFSIZ);
+	if (!buff)
+		buff = malloc(BUFSIZ);
+	if (!yytext || !buff)
+		eprintf("bc: out of memory\n");
 }
 
 static int
@@ -674,8 +677,7 @@ run(void)
 static void
 usage(void)
 {
-	fputs("usage: bc [-cdls]\n", stderr);
-	exit(1);
+	eprintf("usage: %s [-cdls]\n", argv0);
 }
 
 int

@@ -14,5 +14,6 @@ RANLIB = ranlib
 SMAKE = $(MAKE)
 
 # -lrt might be needed on some systems
+# -DYYDEBUG adds more debug info when yacc is involved
 # CFLAGS   =
 # LDFLAGS  =
