@@ -219,10 +219,10 @@ $(OBJ) $(BIN): $(HDR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 
 .c:
-	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $< $(LIB)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIB)
 
 bc: bc.c
-	$(CC) $(LDFLAGS) -o $@ bc.c $(LIB)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ bc.c $(LIB)
 
 $(MAKEOBJ): make/make.h
 
