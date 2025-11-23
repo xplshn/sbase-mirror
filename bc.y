@@ -168,7 +168,7 @@ arglst  : expr
 
 rel     : expr
         | expr EQ expr          {$$ = code("%s%s=", $3, $1);}
-        | expr LE expr          {$$ = code("%s%s!=", $3, $1);}
+        | expr LE expr          {$$ = code("%s%s!>", $3, $1);}
         | expr GE expr          {$$ = code("%s%s!<", $3, $1);}
         | expr NE expr          {$$ = code("%s%s!=", $3, $1);}
         | expr '<' expr         {$$ = code("%s%s<", $3, $1);}
