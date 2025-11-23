@@ -5,6 +5,7 @@ include config.mk
 .SUFFIXES: .y .o .c
 
 CPPFLAGS =\
+	-DPREFIX=\"$(PREFIX)\" \
 	-D_DEFAULT_SOURCE \
 	-D_NETBSD_SOURCE \
 	-D_BSD_SOURCE \
