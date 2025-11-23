@@ -587,10 +587,17 @@ operand(int ch)
 static void
 comment(void)
 {
-	do {
-		while (getchar() != '*')
-			;
-	} while (getchar() != '/');
+	int c;
+
+	for (;;) {
+		while ((c = getchar()) != '*') {
+			if (c == '\n')
+				lineno++;
+		}
+		if ((c = getchar()) == '/')
+			break;
+		ungetc(c, stdin);
+	}
 }
 
 static int
