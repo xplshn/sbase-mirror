@@ -101,8 +101,8 @@ program  :
          | item program
          ;
 
-item     : scolonlst '\n'
-         | function             {writeout($1);}
+item     : scolonlst '\n'       {used = 0;}
+         | function             {writeout($1); used = 0;}
          ;
 
 scolonlst:
@@ -246,8 +246,6 @@ writeout(char *s)
 		goto err;
 	if (write(1, (char[]){'\n'}, 1) < 0)
 		goto err;
-	used = 0;
-
 	return;
 	
 err:
@@ -701,6 +699,7 @@ bc(char *fname)
 
 	for (init(); run(); init())
 		;
+	nested = used = 0;
 }
 static void
 loadlib(void)
