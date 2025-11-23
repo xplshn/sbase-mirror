@@ -121,11 +121,11 @@ statlst :                       {$$ = code("");}
 
 stat    : exprstat
         | STRING                {$$ = code("[%s]P", $1);}
-        | BREAK                 {$$ = code(" %dQ", nested);}
+        | BREAK                 {$$ = code(" %dQ", nested);} /* FIXME */
         | QUIT                  {quit();}
-        | RETURN
-        | RETURN '(' expr ')'
-        | RETURN '(' ')'
+        | RETURN                {$$ = code(" %dQ", nested);}
+        | RETURN '(' expr ')'   {$$ = code(" %s %dQ", $3, nested);}
+        | RETURN '(' ')'        {$$ = code(" %dQ", nested);}
         | FOR fordef stat       {$$ = forcode($2, $3);}
         | IF cond stat          {$$ = ifcode($2, $3);}
         | WHILE cond stat       {$$ = whilecode($2, $3);}
