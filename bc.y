@@ -251,7 +251,7 @@ writeout(char *s)
 	return;
 	
 err:
-	eprintf("bc:writing to dc:");
+	eprintf("writing to dc:");
 }
 
 static char *
@@ -267,7 +267,7 @@ code(char *fmt, ...)
 	va_end(va);
 
 	if (n < 0 || n >= room)
-		eprintf("bc: unable to code requested operation\n");
+		eprintf("unable to code requested operation\n");
 
 	s = buff + used;
 	used += n + 1;
@@ -630,11 +630,11 @@ spawn(void)
 	char errmsg[] = "bc:error execing dc\n";
 
 	if (pipe(fds) < 0)
-		eprintf("bc:creating pipe:");
+		eprintf("creating pipe:");
 
 	switch (fork()) {
 	case -1:
-		eprintf("bc:forking dc:");
+		eprintf("forking dc:");
 	case 0:
 		close(1);
 		dup(fds[1]);
@@ -664,7 +664,7 @@ init(void)
 	if (!buff)
 		buff = malloc(BUFSIZ);
 	if (!yytext || !buff)
-		eprintf("bc: out of memory\n");
+		eprintf("out of memory\n");
 }
 
 static int
@@ -688,7 +688,7 @@ bc(char *fname)
 	if (fname) {
 		filename = fname;
 		if (!freopen(fname, "r", stdin))
-			eprintf("bc: %s:", fname);
+			eprintf("%s:", fname);
 	}
 
 	for (init(); run(); init())
@@ -725,7 +725,7 @@ loadlib(void)
 share:
 	r = snprintf(fname, sizeof(fname), "%s/share/misc/%s", PREFIX, bclib);
 	if (r < 0 || r >= sizeof(fname))
-		eprintf("bc: invalid path name for bc.library\n");
+		eprintf("invalid path name for bc.library\n");
 	bc(fname);
 }
 
