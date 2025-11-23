@@ -154,7 +154,7 @@ autolst :                       {$$ = "%s";}
         ;
 
 locals  : local
-        | locals ',' local      {$$ = code($1, $3);}
+        | locals ',' local      {$$ = code("%s%s", $1, $3);}
         ;
 
 local   : ID                    {$$ = code("S%s%%sL%ss.", var($1), var($1));}
