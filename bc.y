@@ -690,7 +690,8 @@ run(void)
 static void
 bc(char *fname)
 {
-	nested = lineno = 0;
+	lineno = 1;
+	nested = 0;
 
 	if (fname) {
 		filename = fname;
