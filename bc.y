@@ -615,7 +615,7 @@ repeat:
 		yyerror("invalid input character");
 	} else if (islower(ch)) {
 		return iden(ch);
-	} else if (strchr(DIGITS, ch)) {
+	} else if (ch == '.' || strchr(DIGITS, ch)) {
 		return number(ch);
 	} else {
 		if (ch == '/') {
