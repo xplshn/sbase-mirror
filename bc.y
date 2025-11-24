@@ -2,6 +2,7 @@
 #include <libgen.h>
 #include <unistd.h>
 
+#include <assert.h>
 #include <ctype.h>
 #include <errno.h>
 #include <setjmp.h>
@@ -14,6 +15,7 @@
 #include "util.h"
 
 #define DIGITS   "0123456789ABCDEF"
+#define NESTED_MAX 10
 
 int yydebug;
 
@@ -33,12 +35,12 @@ static int yylex(void);
 
 static void quit(void);
 static char *code(char *, ...);
-static char *forcode(Macro, char *);
-static char *whilecode(Macro, char *);
-static char *ifcode(Macro, char *);
-static char *funcode(Macro, char *, char *);
-static Macro macro(char *, char *, char *);
-static Macro function(char *, char *);
+static char *forcode(Macro *, char *);
+static char *whilecode(Macro *, char *);
+static char *ifcode(Macro *, char *);
+static char *funcode(Macro *, char *, char *);
+static Macro *macro(char *, char *, char *);
+static Macro *function(char *, char *);
 
 static char *ftn(char *);
 static char *var(char *);
@@ -51,6 +53,7 @@ static char *filename = "<stdin>";
 static int lineno, nerr;
 static jmp_buf recover;
 static int nested;
+static Macro macros[NESTED_MAX];
 int cflag, dflag, lflag, sflag;
 
 %}
@@ -58,7 +61,7 @@ int cflag, dflag, lflag, sflag;
 %union {
 	char *str;
 	char id[2];
-	Macro macro;
+	Macro *macro;
 }
 
 %token <id> ID
@@ -274,89 +277,88 @@ code(char *fmt, ...)
 }
 
 static char *
-funcode(Macro d, char *id, char *params)
+funcode(Macro *d, char *id, char *params)
 {
 	char *s;
 
-	s = code(d.vars, d.body);
+	s = code(d->vars, d->body);
 	s = code(params, s);
 	s = code("[%s]s%s", s, id);
 	return s;
 }
 
 static char *
-forcode(Macro d, char *body)
+forcode(Macro *d, char *body)
 {
 	char *s;
 
 	s = code("[%s%ss.%s%d]s%d",
 	         body,
-	         d.inc,
-	         d.cmp,
-	         d.n, d.n);
+	         d->inc,
+	         d->cmp,
+	         d->n, d->n);
 	writeout(s);
 
-	s = code("%ss.l%dx", d.init, d.n);
+	s = code("%ss.l%dx", d->init, d->n);
 	nested--;
 
 	return s;
 }
 
 static char *
-whilecode(Macro d, char *body)
+whilecode(Macro *d, char *body)
 {
 	char *s;
 
-	s = code("[%ss.%s%d]s%d", body, d.cmp, d.n, d.n);
+	s = code("[%ss.%s%d]s%d", body, d->cmp, d->n, d->n);
 	writeout(s);
 
-	s = code("l%dx", d.n);
+	s = code("l%dx", d->n);
 	nested--;
 
 	return s;
 }
 
 static char *
-ifcode(Macro d, char *body)
+ifcode(Macro *d, char *body)
 {
 	char *s;
 
-	s = code("[%s]s%d", body, d.n);
+	s = code("[%s]s%d", body, d->n);
 	writeout(s);
 
-	s = code("%s%d", d.cmp, d.n);
+	s = code("%s%d", d->cmp, d->n);
 	nested--;
 
 	return s;
 }
 
-static Macro
+static Macro *
 macro(char *init, char *cmp, char *inc)
 {
-	Macro d;
+	Macro *d;
 
-	if (nested == 10)
+	if (nested == NESTED_MAX)
 		yyerror("bc:too much nesting");
 
-	d.init = init;
-	d.cmp = cmp;
-	d.inc = inc;
-	d.n = nested++;
+	d = &macros[nested];
+	d->init = init;
+	d->cmp = cmp;
+	d->inc = inc;
+	d->n = nested++;
 
 	return d;
 }
 
-static Macro
+static Macro *
 function(char *vars, char *body)
 {
-	Macro d;
+	Macro *d;
 
-	if (nested == 10)
-		yyerror("bc:too much nesting");
-
-	d.vars = vars;
-	d.body = body;
-	d.n = nested++;
+	assert(nested == 0);
+	d = macro(NULL, NULL, NULL);
+	d->vars = vars;
+	d->body = body;
 
 	return d;
 }
