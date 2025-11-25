@@ -38,7 +38,7 @@ static char *code(char *, ...);
 static char *forcode(Macro *, char *, char *, char *, char *);
 static char *whilecode(Macro *, char *, char *);
 static char *ifcode(Macro *, char *, char *);
-static char *funcode(Macro *, char *, char *, char *);
+static void funcode(Macro *, char *, char *, char *);
 static Macro *define(char *, char *);
 static char *retcode(char *);
 static char *brkcode(void);
@@ -132,9 +132,9 @@ stat    : exprstat
         | STRING                {$$ = code("[%s]P", $1);}
         | BREAK                 {$$ = brkcode();}
         | QUIT                  {quit();}
-        | RETURN                {$$ = retcode("0");}
+        | RETURN                {$$ = retcode(code("0"));}
         | RETURN '(' expr ')'   {$$ = retcode($3);}
-        | RETURN '(' ')'        {$$ = retcode("0");}
+        | RETURN '(' ')'        {$$ = retcode(code("0"));}
         | while cond stat       {$$ = whilecode($1, $2, $3);}
         | if cond stat          {$$ = ifcode($1, $2, $3);}
         | '{' statlst '}'       {$$ = $2;}
@@ -153,25 +153,25 @@ for     : FOR                   {$$ = macro(LOOP, 0);}
 def     : DEF ID                {$$ = macro(DEF, funid($2));}
         ;
 
-parlst  : '(' ')'               {$$ = "%s";}
+parlst  : '(' ')'               {$$ = code("%%s");}
         | '(' params ')'        {$$ = $2;}
         ;
 
 params  : param
-        | params ',' param      {$$ = code("%s%s", $1, $3);}
+        | params ',' param      {$$ = code($1, $3); free($1);}
         ;
 
 param   : ID                    {$$ = code("S%s%%sL%ss.", var($1), var($1));}
         | ID '[' ']'            {$$ = code("S%s%%sL%ss.", ary($1), ary($1));}
         ;
 
-autolst :                       {$$ = "%s";}
+autolst :                       {$$ = code("%%s");}
         | AUTO locals '\n'      {$$ = $2;}
         | AUTO locals ';'       {$$ = $2;}
         ;
 
 locals  : local
-        | locals ',' local      {$$ = code("%s%s", $1, $3);}
+        | locals ',' local      {$$ = code($1, $3); free($1);}
         ;
 
 local   : ID                    {$$ = code("0S%s%%sL%ss.", var($1), var($1));}
@@ -196,7 +196,7 @@ rel     : expr                  {$$ = code("%s 0!=", $1);}
         | expr '>' expr         {$$ = code("%s%s>", $3, $1);}
         ;
 
-exprstat: nexpr                 {$$ = code("%s%ss.", $1, sflag ? "" : "p");}
+exprstat: nexpr                 {$$ = code("%s%ss.", $1, code(sflag ? "" : "p"));}
         | assign                {$$ = code("%ss.", $1);}
         ;
 
@@ -204,7 +204,7 @@ expr    : nexpr
         | assign
         ;
 
-nexpr   : NUMBER                {$$ = code(" %s", $1);}
+nexpr   : NUMBER                {$$ = code(" %s", code($1));}
         | ID                    {$$ = code("l%s", var($1));}
         | DOT                   {$$ = code("l.");}
         | SCALE                 {$$ = code("K");}
@@ -224,16 +224,16 @@ nexpr   : NUMBER                {$$ = code(" %s", $1);}
         | LENGTH '(' expr ')'   {$$ = code("%sZ", $3);}
         | SQRT '(' expr ')'     {$$ = code("%sv", $3);}
         | SCALE '(' expr ')'    {$$ = code("%sX", $3);}
-        | INCDEC ID             {$$ = code("l%s1%sds%s", var($2), $1, var($2));}
-        | INCDEC SCALE          {$$ = code("K1%sk", $1);}
-        | INCDEC IBASE          {$$ = code("I1%sdi", $1);}
-        | INCDEC OBASE          {$$ = code("O1%sdo", $1);}
-        | INCDEC ID ary         {$$ = code("%sdS_;%s1%sdL_:%s", $3, ary($2), $1, ary($2));}
-        | ID INCDEC             {$$ = code("l%sd1%ss%s", var($1), $2, var($1));}
-        | SCALE INCDEC          {$$ = code("Kd1%sk", $2);}
-        | IBASE INCDEC          {$$ = code("Id1%si", $2);}
-        | OBASE INCDEC          {$$ = code("Od1%so", $2);}
-        | ID ary INCDEC         {$$ = code("%sds.;%sd1%sl.:%s", $2, ary($1), $3, ary($1));}
+        | INCDEC ID             {$$ = code("l%s1%sds%s", var($2), code($1), var($2));}
+        | INCDEC SCALE          {$$ = code("K1%sk", code($1));}
+        | INCDEC IBASE          {$$ = code("I1%sdi", code($1));}
+        | INCDEC OBASE          {$$ = code("O1%sdo", code($1));}
+        | INCDEC ID ary         {$$ = code("%sdS_;%s1%sdL_:%s", $3, ary($2), code($1), ary($2));}
+        | ID INCDEC             {$$ = code("l%sd1%ss%s", var($1), code($2), var($1));}
+        | SCALE INCDEC          {$$ = code("Kd1%sk", code($2));}
+        | IBASE INCDEC          {$$ = code("Id1%si", code($2));}
+        | OBASE INCDEC          {$$ = code("Od1%so", code($2));}
+        | ID ary INCDEC         {$$ = code("%sds.;%sd1%sl.:%s", $2, ary($1), code($3), ary($1));}
         ;
 
 assign  : ID '=' expr           {$$ = code("%sds%s", $3, var($1));}
@@ -241,11 +241,11 @@ assign  : ID '=' expr           {$$ = code("%sds%s", $3, var($1));}
         | IBASE '=' expr        {$$ = code("%sdi", $3);}
         | OBASE '=' expr        {$$ = code("%sdo", $3);}
         | ID ary '=' expr       {$$ = code("%sd%s:%s", $4, $2, ary($1));}
-        | ID EQOP expr          {$$ = code("%sl%s%sds%s", $3, var($1), $2, var($1));}
-        | SCALE EQOP expr       {$$ = code("%sK%sdk", $3, $2);}
-        | IBASE EQOP expr       {$$ = code("%sI%sdi", $3, $2);}
-        | OBASE EQOP expr       {$$ = code("%sO%sdo", $3, $2);}
-        | ID ary EQOP expr      {$$ = code("%s%sds.;%s%sdl.:s", $4, $2, ary($1), $3, ary($1));}
+        | ID EQOP expr          {$$ = code("%sl%s%sds%s", $3, var($1), code($2), var($1));}
+        | SCALE EQOP expr       {$$ = code("%sK%sdk", $3, code($2));}
+        | IBASE EQOP expr       {$$ = code("%sI%sdi", $3, code($2));}
+        | OBASE EQOP expr       {$$ = code("%sO%sdo", $3, code($2));}
+        | ID ary EQOP expr      {$$ = code("%s%sds.;%s%sdl.:s", $4, $2, ary($1), code($3), ary($1));}
         ;
 
 ary     : '[' expr ']'          {$$ = $2;}
@@ -267,6 +267,7 @@ writeout(char *s)
 		goto err;
 	if (write(1, (char[]){'\n'}, 1) < 0)
 		goto err;
+	free(s);
 	return;
 	
 err:
@@ -276,22 +277,54 @@ err:
 static char *
 code(char *fmt, ...)
 {
-	char *s;
-	va_list va;
-	size_t n, room;
+	char *s, *t;
+	va_list ap;
+	int c, len, room;
 
-	va_start(va, fmt);
-	room = BUFSIZ - used;
-	n = vsnprintf(buff+used, room, fmt, va);
-	va_end(va);
+	va_start(ap, fmt);
+	room = BUFSIZ;
+	for (s = buff; *fmt; s += len) {
+		len = 1;
+		if ((c = *fmt++) != '%')
+			goto append;
 
-	if (n < 0 || n >= room)
-		eprintf("unable to code requested operation\n");
+		switch (*fmt++) {
+		case 'd':
+			c = va_arg(ap, int);
+			len = snprintf(s, room, "%d", c);
+			if (len < 0 || len >= room)
+				goto err;
+			break;
+		case 'c':
+			c = va_arg(ap, int);
+			goto append;
+		case 's':
+			t = va_arg(ap, void *);
+			len = strlen(t);
+			if (len >= room)
+				goto err;
+			memcpy(s, t, len);
+			free(t);
+			break;
+		case '%':
+		append:
+			if (room <= 1)
+				goto err;
+			*s = c;
+			break;
+		default:
+			abort();
+		}
 
-	s = buff + used;
-	used += n + 1;
+		room -= len;
+	}
+	va_end(ap);
 
-	return s;
+	*s = '\0';
+	return estrdup(buff);
+
+err:
+	eprintf("unable to code requested operation\n");
 }
 
 static Macro *
@@ -311,18 +344,19 @@ macro(int op, int id)
 	return d;
 }
 
-static char *
+static void
 funcode(Macro *d, char *params, char *vars, char *body)
 {
-	char *s;
+	char *s, *t1, *t2;
 
-	s = code(vars, params);
-	s = code(s, body);
-	s = code("[%s 0 1Q]s%c", s, d->id);
+	t1 = code(vars, params);
+	t2 = code(t1, body);
+	s = code("[%s 0 1Q]s%c", t2, d->id);
 	nested--;
 	writeout(s);
 
-	return s;
+	free(vars);
+	free(t1);
 }
 
 static char *
@@ -345,7 +379,7 @@ forcode(Macro *d, char *init, char *cmp, char *inc, char *body)
 	s = code("[%s%ss.%s%c]s%c",
 	         body,
 	         inc,
-	         cmp,
+	         estrdup(cmp),
 	         d->flowid, d->flowid);
 	writeout(s);
 
@@ -360,7 +394,10 @@ whilecode(Macro *d, char *cmp, char *body)
 {
 	char *s;
 
-	s = code("[%ss.%s%c]s%c", body, cmp, d->flowid, d->flowid);
+	s = code("[%ss.%s%c]s%c",
+	         body,
+	         estrdup(cmp),
+	         d->flowid, d->flowid);
 	writeout(s);
 
 	s = code("%s%c", cmp, d->flowid);
@@ -408,7 +445,7 @@ ftn(char *s)
 static char *
 var(char *s)
 {
-	return code("%s", s);
+	return code(s);
 }
 
 static void
