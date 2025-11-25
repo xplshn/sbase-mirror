@@ -70,6 +70,7 @@ int cflag, dflag, lflag, sflag;
 %token <str> STRING NUMBER
 %token <str> EQOP '+' '-' '*' '/' '%' '^' INCDEC
 %token HOME LOOP
+%token DOT
 %token EQ
 %token LE
 %token GE
@@ -204,6 +205,7 @@ expr    : nexpr
 
 nexpr   : NUMBER                {$$ = code(" %s", $1);}
         | ID                    {$$ = code("l%s", var($1));}
+        | DOT                   {$$ = code("l.");}
         | SCALE                 {$$ = code("K");}
         | IBASE                 {$$ = code("I");}
         | OBASE                 {$$ = code("O");}
@@ -567,6 +569,8 @@ follow(int next, int yes, int no)
 static int
 operand(int ch)
 {
+	int peekc;
+
 	switch (ch) {
 	case '\n':
 	case '{':
@@ -578,6 +582,12 @@ operand(int ch)
 	case ',':
 	case ';':
 		return ch;
+	case '.':
+		peekc = ungetc(getchar(), stdin);
+		if (strchr(DIGITS, peekc))
+			return number(ch);
+		yylval.str = ".";
+		return DOT;
 	case '"':
 		return string(ch);
 	case '*':
@@ -643,7 +653,7 @@ repeat:
 		yyerror("invalid input character");
 	} else if (islower(ch)) {
 		return iden(ch);
-	} else if (ch == '.' || strchr(DIGITS, ch)) {
+	} else if (strchr(DIGITS, ch)) {
 		return number(ch);
 	} else {
 		if (ch == '/') {
