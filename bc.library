@@ -164,7 +164,7 @@ define a(x){
 	if(x==0) return(0)
 	if(x==1) {
 		if(scale<52) {
-return(.7853981633974483096156608458198757210492923498437764/1)
+			return(.7853981633974483096156608458198757210492923498437764/1)
 		}
 	}
 	t = scale
@@ -198,35 +198,35 @@ return(.7853981633974483096156608458198757210492923498437764/1)
 }
 
 define j(n,x){
-auto a,b,c,d,e,g,i,s,k,t
+	auto a,b,c,d,e,g,i,s,k,t
 
 	t = scale
 	k = 1.36*x + 1.16*t - n
 	k = length(k) - scale(k)
 	if(k>0) scale = scale + k
 
-s= -x*x/4
-if(n<0){
-	n= -n
-	x= -x
+	s= -x*x/4
+	if(n<0){
+		n= -n
+		x= -x
 	}
-a=1
-c=1
-for(i=1;i<=n;i++){
-	a=a*x
-	c = c*2*i
+	a=1
+	c=1
+	for(i=1;i<=n;i++){
+		a=a*x
+		c = c*2*i
 	}
-b=a
-d=1
-e=1
-for(i=1;1;i++){
-	a=a*s
-	b=b*i*(n+i) + a
-	c=c*i*(n+i)
-	g=b/c
-	if(g==e){
-		scale = t
-		return(g/1)
+	b=a
+	d=1
+	e=1
+	for(i=1;1;i++){
+		a=a*s
+		b=b*i*(n+i) + a
+		c=c*i*(n+i)
+		g=b/c
+		if(g==e){
+			scale = t
+			return(g/1)
 		}
 	e=g
 	}
