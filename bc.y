@@ -843,12 +843,9 @@ main(int argc, char *argv[])
 	if (lflag)
 		loadlib();
 
-	if (*argv == NULL) {
-		bc(NULL);
-	} else {
-		while (*argv)
-			bc(*argv++);
-	}
+	while (*argv)
+		bc(*argv++);
+	bc(NULL);
 
 	quit();
 }
