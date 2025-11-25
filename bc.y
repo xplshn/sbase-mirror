@@ -51,7 +51,8 @@ static void writeout(char *);
 
 static size_t used;
 static char *yytext, *buff;
-static char *filename = "<stdin>";
+static char *filename;
+static FILE *filep;
 static int lineno, nerr;
 static jmp_buf recover;
 static int nested;
@@ -421,13 +422,13 @@ skipspaces(void)
 {
 	int ch;
 
-	while (isspace(ch = getchar())) {
+	while (isspace(ch = getc(filep))) {
 		if (ch == '\n') {
 			lineno++;
 			break;
 		}
 	}
-	ungetc(ch, stdin);
+	ungetc(ch, filep);
 }
 
 static int
@@ -456,9 +457,9 @@ iden(int ch)
 	struct keyword *p;
 	char *bp;
 
-	ungetc(ch, stdin);
+	ungetc(ch, filep);
 	for (bp = yytext; bp < &yytext[BUFSIZ]; ++bp) {
-		ch = getchar();
+		ch = getc(filep);
 		if (!islower(ch))
 			break;
 		*bp = ch;
@@ -467,7 +468,7 @@ iden(int ch)
 	if (bp == &yytext[BUFSIZ])
 		yyerror("too long token");
 	*bp = '\0';
-	ungetc(ch, stdin);
+	ungetc(ch, filep);
 
 	if (strlen(yytext) == 1) {
 		strcpy(yylval.id, yytext);
@@ -490,7 +491,7 @@ digits(char *bp)
 	char *digits = DIGITS, *p;
 
 	while (bp < &yytext[BUFSIZ]) {
-		ch = getchar();
+		ch = getc(filep);
 		p = strchr(digits, ch);
 		if (!p)
 			break;
@@ -499,7 +500,7 @@ digits(char *bp)
 
 	if (bp == &yytext[BUFSIZ])
 		return NULL;
-	ungetc(ch, stdin);
+	ungetc(ch, filep);
 
 	return bp;
 }
@@ -510,12 +511,12 @@ number(int ch)
 	int d;
 	char *bp;
 
-	ungetc(ch, stdin);
+	ungetc(ch, filep);
 	if ((bp = digits(yytext)) == NULL)
 		goto toolong;
 
-	if ((ch = getchar()) != '.') {
-		ungetc(ch, stdin);
+	if ((ch = getc(filep)) != '.') {
+		ungetc(ch, filep);
 		goto end;
 	}
 	*bp++ = '.';
@@ -541,7 +542,7 @@ string(int ch)
 	char *bp;
 
 	for (bp = yytext; bp < &yytext[BUFSIZ]; ++bp) {
-		if ((ch = getchar()) == '"')
+		if ((ch = getc(filep)) == '"')
 			break;
 		*bp = ch;
 	}
@@ -559,10 +560,10 @@ follow(int next, int yes, int no)
 {
 	int ch;
 
-	ch = getchar();
+	ch = getc(filep);
 	if (ch == next)
 		return yes;
-	ungetc(ch, stdin);
+	ungetc(ch, filep);
 	return no;
 }
 
@@ -583,7 +584,7 @@ operand(int ch)
 	case ';':
 		return ch;
 	case '.':
-		peekc = ungetc(getchar(), stdin);
+		peekc = ungetc(getc(filep), filep);
 		if (strchr(DIGITS, peekc))
 			return number(ch);
 		yylval.str = ".";
@@ -615,7 +616,7 @@ operand(int ch)
 	case '>':
 		return follow('=', GE, '>');
 	case '!':
-		if (getchar() == '=')
+		if (getc(filep) == '=')
 			return NE;
 	default:
 		yyerror("invalid operand");
@@ -628,13 +629,13 @@ comment(void)
 	int c;
 
 	for (;;) {
-		while ((c = getchar()) != '*') {
+		while ((c = getc(filep)) != '*') {
 			if (c == '\n')
 				lineno++;
 		}
-		if ((c = getchar()) == '/')
+		if ((c = getc(filep)) == '/')
 			break;
-		ungetc(c, stdin);
+		ungetc(c, filep);
 	}
 }
 
@@ -646,7 +647,7 @@ yylex(void)
 repeat:
 	skipspaces();
 
-	ch = getchar();
+	ch = getc(filep);
 	if (ch == EOF) {
 		return EOF;
 	} else if (!isascii(ch)) {
@@ -657,12 +658,12 @@ repeat:
 		return number(ch);
 	} else {
 		if (ch == '/') {
-			peekc = getchar();
+			peekc = getc(filep);
 			if (peekc == '*') {
 				comment();
 				goto repeat;
 			}
-			ungetc(peekc, stdin);
+			ungetc(peekc, filep);
 		}
 		return operand(ch);
 	}
@@ -699,10 +700,15 @@ spawn(void)
 	}
 }
 
-static int
+static void
 run(void)
 {
-	setjmp(recover);
+	if (setjmp(recover)) {
+		if (ferror(filep))
+			eprintf("%s:", filename);
+		if (feof(filep))
+			return;
+	}
 	yyparse();
 }
 
@@ -715,13 +721,17 @@ bc(char *fname)
 	used = nested = 0;
 
 	macro(HOME, 0);
-	if (fname) {
+	if (!fname) {
+		filename = "<stdin>";
+		filep = stdin;
+	} else {
 		filename = fname;
-		if (!freopen(fname, "r", stdin))
+		if ((filep = fopen(fname, "r")) == NULL)
 			eprintf("%s:", fname);
 	}
 
 	run();
+	fclose(filep);
 }
 
 static void
