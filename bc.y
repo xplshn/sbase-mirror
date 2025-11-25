@@ -87,6 +87,7 @@ int cflag, dflag, lflag, sflag;
 %token IBASE
 %token OBASE
 %token AUTO
+%token PRINT
 
 %type <str> assign nexpr expr exprstat rel stat ary statlst cond
 %type <str> autolst arglst parlst
@@ -125,6 +126,7 @@ statlst :                       {$$ = code("");}
         ;
 
 stat    : exprstat
+        | PRINT expr            {$$ = code("%sps.", $2);}
         | STRING                {$$ = code("[%s]P", $1);}
         | BREAK                 {$$ = brkcode();}
         | QUIT                  {quit();}
@@ -446,6 +448,7 @@ iden(int ch)
 		{"ibase", IBASE},
 		{"obase", OBASE},
 		{"auto", AUTO},
+		{"print", PRINT},
 		{NULL}
 	};
 	struct keyword *p;
