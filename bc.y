@@ -17,17 +17,17 @@
 #define DIGITS   "0123456789ABCDEF"
 #define NESTED_MAX 10
 
+#define funid(f) ((f)[0] - 'a' + 1)
+
 int yydebug;
 
 typedef struct macro Macro;
 
 struct macro {
-	char *init;
-	char *cmp;
-	char *inc;
-	char *vars;
-	char *body;
-	int n;
+	int op;
+	int id;
+	int flowid;
+	int nested;
 };
 
 static int yyerror(char *);
@@ -35,12 +35,14 @@ static int yylex(void);
 
 static void quit(void);
 static char *code(char *, ...);
-static char *forcode(Macro *, char *);
-static char *whilecode(Macro *, char *);
-static char *ifcode(Macro *, char *);
-static char *funcode(Macro *, char *, char *);
-static Macro *macro(char *, char *, char *);
-static Macro *function(char *, char *);
+static char *forcode(Macro *, char *, char *, char *, char *);
+static char *whilecode(Macro *, char *, char *);
+static char *ifcode(Macro *, char *, char *);
+static char *funcode(Macro *, char *, char *, char *);
+static Macro *define(char *, char *);
+static char *retcode(char *);
+static char *brkcode(void);
+static Macro *macro(int, int);
 
 static char *ftn(char *);
 static char *var(char *);
@@ -67,6 +69,7 @@ int cflag, dflag, lflag, sflag;
 %token <id> ID
 %token <str> STRING NUMBER
 %token <str> EQOP '+' '-' '*' '/' '%' '^' INCDEC
+%token HOME LOOP
 %token EQ
 %token LE
 %token GE
@@ -85,11 +88,10 @@ int cflag, dflag, lflag, sflag;
 %token OBASE
 %token AUTO
 
-%type <str> assign nexpr expr exprstat rel stat ary statlst
-%type <str> autolst arglst
-%type <str> parlst locals local
-%type <str> function
-%type <macro> fordef cond funbody
+%type <str> assign nexpr expr exprstat rel stat ary statlst cond
+%type <str> autolst arglst parlst
+%type <str> params param locals local
+%type <macro> def if for while
 
 %right	'=' EQOP
 %left	'+' '-'
@@ -101,11 +103,11 @@ int cflag, dflag, lflag, sflag;
 %%
 
 program  :
-         | item program
+         | item program        {used = 0;}
          ;
 
-item     : scolonlst '\n'       {used = 0;}
-         | function             {writeout($1); used = 0;}
+item     : scolonlst '\n'
+         | def parlst '{' '\n' autolst statlst '}' {funcode($1, $2, $5, $6);}
          ;
 
 scolonlst:
@@ -124,31 +126,39 @@ statlst :                       {$$ = code("");}
 
 stat    : exprstat
         | STRING                {$$ = code("[%s]P", $1);}
-        | BREAK                 {$$ = code(" %dQ", nested);} /* FIXME */
+        | BREAK                 {$$ = brkcode();}
         | QUIT                  {quit();}
-        | RETURN                {$$ = code(" %dQ", nested);}
-        | RETURN '(' expr ')'   {$$ = code(" %s %dQ", $3, nested);}
-        | RETURN '(' ')'        {$$ = code(" %dQ", nested);}
-        | FOR fordef stat       {$$ = forcode($2, $3);}
-        | IF cond stat          {$$ = ifcode($2, $3);}
-        | WHILE cond stat       {$$ = whilecode($2, $3);}
+        | RETURN                {$$ = retcode("0");}
+        | RETURN '(' expr ')'   {$$ = retcode($3);}
+        | RETURN '(' ')'        {$$ = retcode("0");}
+        | while cond stat       {$$ = whilecode($1, $2, $3);}
+        | if cond stat          {$$ = ifcode($1, $2, $3);}
         | '{' statlst '}'       {$$ = $2;}
+        | for '(' expr ';' rel ';' expr ')' stat  {$$ = forcode($1, $3, $5, $7, $9);}
         ;
 
-fordef  : '(' expr ';' rel ';' expr ')' {$$ = macro($2, $4, $6);}
+while   : WHILE                 {$$ = macro(LOOP, 0);}
         ;
 
-cond    : '(' rel ')'           {$$ = macro(NULL, $2, NULL);}
+if      : IF                    {$$ = macro(IF, 0);}
         ;
 
-function: DEF ID parlst funbody {$$ = funcode($4, $2, $3);}
+for     : FOR                   {$$ = macro(LOOP, 0);}
         ;
 
-funbody : '{' '\n' autolst statlst '}' {$$ = function($3, $4);}
+def     : DEF ID                {$$ = macro(DEF, funid($2));}
         ;
 
 parlst  : '(' ')'               {$$ = "%s";}
-        | '(' locals ')'        {$$ = $2;}
+        | '(' params ')'        {$$ = $2;}
+        ;
+
+params  : param
+        | params ',' param      {$$ = code("%s%s", $1, $3);}
+        ;
+
+param   : ID                    {$$ = code("S%s%%sL%ss.", var($1), var($1));}
+        | ID '[' ']'            {$$ = code("S%s%%sL%ss.", ary($1), ary($1));}
         ;
 
 autolst :                       {$$ = "%s";}
@@ -160,8 +170,8 @@ locals  : local
         | locals ',' local      {$$ = code("%s%s", $1, $3);}
         ;
 
-local   : ID                    {$$ = code("S%s%%sL%ss.", var($1), var($1));}
-        | ID '[' ']'            {$$ = code("S%s%%sL%ss.", ary($1), ary($1));}
+local   : ID                    {$$ = code("0S%s%%sL%ss.", var($1), var($1));}
+        | ID '[' ']'            {$$ = code("0S%s%%sL%ss.", ary($1), ary($1));}
         ;
 
 arglst  : expr
@@ -170,7 +180,10 @@ arglst  : expr
         | ID '[' ']' ',' arglst {$$ = code("%s%s", ary($1), $5);}
         ;
 
-rel     : expr
+cond    : '(' rel ')'           {$$ = $2;}
+        ;
+
+rel     : expr                  {$$ = code("%s 0!=", $1);}
         | expr EQ expr          {$$ = code("%s%s=", $3, $1);}
         | expr LE expr          {$$ = code("%s%s!>", $3, $1);}
         | expr GE expr          {$$ = code("%s%s!<", $3, $1);}
@@ -179,7 +192,7 @@ rel     : expr
         | expr '>' expr         {$$ = code("%s%s>", $3, $1);}
         ;
 
-exprstat: nexpr                 {$$ = code("%s%s", $1, sflag ? "s." : "p");}
+exprstat: nexpr                 {$$ = code("%s%ss.", $1, sflag ? "" : "p");}
         | assign                {$$ = code("%ss.", $1);}
         ;
 
@@ -237,7 +250,7 @@ ary     : '[' expr ']'          {$$ = $2;}
 static int
 yyerror(char *s)
 {
-	fprintf(stderr, "bc: %s:%d:%s\n", filename, lineno, s);
+	fprintf(stderr, "bc: %s:%d: %s\n", filename, lineno, s);
 	nerr++;
 	longjmp(recover, 1);
 }
@@ -276,91 +289,103 @@ code(char *fmt, ...)
 	return s;
 }
 
-static char *
-funcode(Macro *d, char *id, char *params)
-{
-	char *s;
-
-	s = code(d->vars, d->body);
-	s = code(params, s);
-	s = code("[%s]s%s", s, id);
-	return s;
-}
-
-static char *
-forcode(Macro *d, char *body)
-{
-	char *s;
-
-	s = code("[%s%ss.%s%d]s%d",
-	         body,
-	         d->inc,
-	         d->cmp,
-	         d->n, d->n);
-	writeout(s);
-
-	s = code("%ss.l%dx", d->init, d->n);
-	nested--;
-
-	return s;
-}
-
-static char *
-whilecode(Macro *d, char *body)
-{
-	char *s;
-
-	s = code("[%ss.%s%d]s%d", body, d->cmp, d->n, d->n);
-	writeout(s);
-
-	s = code("l%dx", d->n);
-	nested--;
-
-	return s;
-}
-
-static char *
-ifcode(Macro *d, char *body)
-{
-	char *s;
-
-	s = code("[%s]s%d", body, d->n);
-	writeout(s);
-
-	s = code("%s%d", d->cmp, d->n);
-	nested--;
-
-	return s;
-}
-
 static Macro *
-macro(char *init, char *cmp, char *inc)
+macro(int op, int id)
 {
 	Macro *d;
 
 	if (nested == NESTED_MAX)
-		yyerror("bc:too much nesting");
+		yyerror("too much nesting");
 
 	d = &macros[nested];
-	d->init = init;
-	d->cmp = cmp;
-	d->inc = inc;
-	d->n = nested++;
+	d->flowid = (op == HOME) ? '0' - 1: d[-1].flowid + 1;
+	d->id = (id != 0) ? id : d->flowid;
+	d->op = op;
+	d->nested = nested++;
 
 	return d;
 }
 
-static Macro *
-function(char *vars, char *body)
+static char *
+funcode(Macro *d, char *params, char *vars, char *body)
+{
+	char *s;
+
+	s = code(vars, params);
+	s = code(s, body);
+	s = code("[%s 0 1Q]s%c", s, d->id);
+	nested--;
+	writeout(s);
+
+	return s;
+}
+
+static char *
+brkcode(void)
 {
 	Macro *d;
 
-	assert(nested == 0);
-	d = macro(NULL, NULL, NULL);
-	d->vars = vars;
-	d->body = body;
+	for (d = &macros[nested-1]; d->op != HOME && d->op != LOOP; --d)
+		;
+	if (d->op == HOME)
+		yyerror("break not in for or while");
+	return code(" %dQ", nested  - d->nested);
+}
 
-	return d;
+static char *
+forcode(Macro *d, char *init, char *cmp, char *inc, char *body)
+{
+	char *s;
+
+	s = code("[%s%ss.%s%c]s%c",
+	         body,
+	         inc,
+	         cmp,
+	         d->flowid, d->flowid);
+	writeout(s);
+
+	s = code("%ss.%s%c", init, cmp, d->flowid);
+	nested--;
+
+	return s;
+}
+
+static char *
+whilecode(Macro *d, char *cmp, char *body)
+{
+	char *s;
+
+	s = code("[%ss.%s%c]s%c", body, cmp, d->flowid, d->flowid);
+	writeout(s);
+
+	s = code("%s%c", cmp, d->flowid);
+	nested--;
+
+	return s;
+}
+
+static char *
+ifcode(Macro *d, char *cmp, char *body)
+{
+	char *s;
+
+	s = code("[%s]s%c", body, d->flowid);
+	writeout(s);
+
+	s = code("%s%c", cmp, d->flowid);
+	nested--;
+
+	return s;
+}
+
+static char *
+retcode(char *expr)
+{
+	char *s;
+
+	if (nested < 2 || macros[1].op != DEF)
+		yyerror("return must be in a function");
+	return code("%s %dQ", expr, nested - 1);
 }
 
 static char *
@@ -372,7 +397,7 @@ ary(char *s)
 static char *
 ftn(char *s)
 {
-	return code("%c", s[0] | 0x80);
+	return code("%c", funid(s));
 }
 
 static char *
@@ -502,7 +527,7 @@ end:
 	return NUMBER;
 
 toolong:
-	yyerror("bc:too long number");
+	yyerror("too long number");
 }
 
 static int
@@ -517,7 +542,7 @@ string(int ch)
 	}
 
 	if (bp == &yytext[BUFSIZ])
-		yyerror("bc:too long string");
+		yyerror("too long string");
 	*bp = '\0';
 	yylval.str = yytext;
 
@@ -661,48 +686,31 @@ spawn(void)
 	}
 }
 
-static void
-init(void)
-{
-	used = 0;
-
-	if (!yytext)
-		yytext = malloc(BUFSIZ);
-	if (!buff)
-		buff = malloc(BUFSIZ);
-	if (!yytext || !buff)
-		eprintf("out of memory\n");
-}
-
 static int
 run(void)
 {
-	if (feof(stdin))
-		return 0;
-
-	if (setjmp(recover))
-		return 1;
-
+	setjmp(recover);
 	yyparse();
-	return 1;
 }
 
 static void
 bc(char *fname)
 {
-	lineno = 1;
-	nested = 0;
+	Macro *d;
 
+	lineno = 1;
+	used = nested = 0;
+
+	macro(HOME, 0);
 	if (fname) {
 		filename = fname;
 		if (!freopen(fname, "r", stdin))
 			eprintf("%s:", fname);
 	}
 
-	for (init(); run(); init())
-		;
-	nested = used = 0;
+	run();
 }
+
 static void
 loadlib(void)
 {
@@ -764,6 +772,11 @@ main(int argc, char *argv[])
 	default:
 		usage();
 	} ARGEND
+
+	yytext = malloc(BUFSIZ);
+	buff = malloc(BUFSIZ);
+	if (!yytext || !buff)
+		eprintf("out of memory\n");
 
 	if (!cflag)
 		spawn();
