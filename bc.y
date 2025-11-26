@@ -91,7 +91,8 @@ int cflag, dflag, lflag, sflag;
 %token AUTO
 %token PRINT
 
-%type <str> assign nexpr expr exprstat rel stat ary statlst cond
+%type <str> statlst scolonlst
+%type <str> assign nexpr expr exprstat rel stat ary cond
 %type <str> autolst arglst parlst
 %type <str> params param locals local
 %type <macro> def if for while
@@ -109,13 +110,13 @@ program  :
          | item program        {used = 0;}
          ;
 
-item     : scolonlst '\n'
+item     : scolonlst '\n'       {writeout($1);}
          | def parlst '{' '\n' autolst statlst '}' {funcode($1, $2, $5, $6);}
          ;
 
-scolonlst:
-         | stat                 {writeout($1);}
-         | scolonlst ';' stat   {writeout($3);}
+scolonlst:                      {$$ = code("");}
+         | stat
+         | scolonlst ';' stat   {$$ = code("%s%s", $1, $3);}
          | scolonlst ';'
          ;
 
