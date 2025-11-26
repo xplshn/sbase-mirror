@@ -588,7 +588,7 @@ string(int ch)
 	if (bp == &yytext[BUFSIZ])
 		yyerror("too long string");
 	*bp = '\0';
-	yylval.str = yytext;
+	yylval.str = estrdup(yytext);
 
 	return STRING;
 }
