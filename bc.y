@@ -130,6 +130,8 @@ statlst :                       {$$ = code("");}
 
 stat    : exprstat
         | PRINT expr            {$$ = code("%sps.", $2);}
+        | PRINT STRING          {$$ = code("[%s]P", $2);}
+        | PRINT STRING ',' expr {$$ = code("[%s]P%sps.", $2, $4);}
         | STRING                {$$ = code("[%s]P", $1);}
         | BREAK                 {$$ = brkcode();}
         | QUIT                  {quit();}
