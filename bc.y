@@ -133,9 +133,9 @@ stat    : exprstat
         | STRING                {$$ = code("[%s]P", $1);}
         | BREAK                 {$$ = brkcode();}
         | QUIT                  {quit();}
-        | RETURN                {$$ = retcode(code("0"));}
+        | RETURN                {$$ = retcode(code(" 0"));}
         | RETURN '(' expr ')'   {$$ = retcode($3);}
-        | RETURN '(' ')'        {$$ = retcode(code("0"));}
+        | RETURN '(' ')'        {$$ = retcode(code(" 0"));}
         | while cond stat       {$$ = whilecode($1, $2, $3);}
         | if cond stat          {$$ = ifcode($1, $2, $3);}
         | '{' statlst '}'       {$$ = $2;}
@@ -625,7 +625,6 @@ operand(int ch)
 		peekc = ungetc(getc(filep), filep);
 		if (strchr(DIGITS, peekc))
 			return number(ch);
-		yylval.str = ".";
 		return DOT;
 	case '"':
 		return string(ch);
