@@ -42,7 +42,7 @@ static char *funcode(Macro *, char *, char *, char *);
 static Macro *define(char *, char *);
 static char *retcode(char *);
 static char *brkcode(void);
-static Macro *macro(int, int);
+static Macro *macro(int);
 
 static char *ftn(char *);
 static char *var(char *);
@@ -52,9 +52,9 @@ static void writeout(char *);
 static char *yytext, *buff;
 static char *filename;
 static FILE *filep;
-static int lineno, nerr;
+static int lineno, nerr, flowid;
 static jmp_buf recover;
-static int nested;
+static int nested, inhome;
 static Macro macros[NESTED_MAX];
 int cflag, dflag, lflag, sflag;
 
@@ -146,16 +146,16 @@ stat    : exprstat
         | for '(' expr ';' rel ';' expr ')' stat  {$$ = forcode($1, $3, $5, $7, $9);}
         ;
 
-while   : WHILE                 {$$ = macro(LOOP, 0);}
+while   : WHILE                 {$$ = macro(LOOP);}
         ;
 
-if      : IF                    {$$ = macro(IF, 0);}
+if      : IF                    {$$ = macro(IF);}
         ;
 
-for     : FOR                   {$$ = macro(LOOP, 0);}
+for     : FOR                   {$$ = macro(LOOP);}
         ;
 
-def     : DEF ID                {$$ = macro(DEF, funid($2));}
+def     : DEF ID                {$$ = macro(DEF);}
         ;
 
 parlst  : '(' ')'               {$$ = code("%%s");}
@@ -333,18 +333,47 @@ err:
 }
 
 static Macro *
-macro(int op, int id)
+macro(int op)
 {
-	Macro *d;
+	int preop;
+	Macro *d, *p;
 
 	if (nested == NESTED_MAX)
 		yyerror("too much nesting");
 
 	d = &macros[nested];
-	d->flowid = (op == HOME) ? '0' - 1: d[-1].flowid + 1;
-	d->id = (id != 0) ? id : d->flowid;
 	d->op = op;
 	d->nested = nested++;
+
+	switch (op) {
+	case HOME:
+		d->id = 0;
+		d->flowid = flowid;
+		inhome = 1;
+		break;
+	case DEF:
+		inhome = 0;
+		d->id = funid(yytext);
+		d->flowid = macros[0].flowid;
+		break;
+	default:
+		assert(nested > 1);
+		preop = d[-1].op;
+		d->flowid = d[-1].flowid;
+		if (preop != HOME && preop != DEF) {
+			if (d->flowid == 255)
+				eprintf("too many control flow structures");
+			d->flowid++;
+		}
+		d->id = d->flowid;
+		if (!inhome) {
+			/* populate reserved id */
+			flowid = d->flowid;
+			for (p = d; p != macros; --p)
+				p[-1].flowid++;
+		}
+		break;
+	}
 
 	return d;
 }
@@ -358,6 +387,7 @@ funcode(Macro *d, char *params, char *vars, char *body)
 	t2 = code(t1, body);
 
 	nested--;
+	inhome = 0;
 	free(vars);
 	free(t1);
 
@@ -385,10 +415,10 @@ forcode(Macro *d, char *init, char *cmp, char *inc, char *body)
 	         body,
 	         inc,
 	         estrdup(cmp),
-	         d->flowid, d->flowid);
+	         d->flowid, d->id);
 	writeout(s);
 
-	s = code("%ss.%s%c", init, cmp, d->flowid);
+	s = code("%ss.%s%c", init, cmp, d->id);
 	nested--;
 
 	return s;
@@ -402,10 +432,10 @@ whilecode(Macro *d, char *cmp, char *body)
 	s = code("[%ss.%s%c]s%c",
 	         body,
 	         estrdup(cmp),
-	         d->flowid, d->flowid);
+	         d->flowid, d->id);
 	writeout(s);
 
-	s = code("%s%c", cmp, d->flowid);
+	s = code("%s%c", cmp, d->id);
 	nested--;
 
 	return s;
@@ -416,10 +446,10 @@ ifcode(Macro *d, char *cmp, char *body)
 {
 	char *s;
 
-	s = code("[%s]s%c", body, d->flowid);
+	s = code("[%s]s%c", body, d->id);
 	writeout(s);
 
-	s = code("%s%c", cmp, d->flowid);
+	s = code("%s%c", cmp, d->id);
 	nested--;
 
 	return s;
@@ -761,7 +791,7 @@ bc(char *fname)
 	lineno = 1;
 	nested = 0;
 
-	macro(HOME, 0);
+	macro(HOME);
 	if (!fname) {
 		filename = "<stdin>";
 		filep = stdin;
@@ -841,6 +871,7 @@ main(int argc, char *argv[])
 	buff = malloc(BUFSIZ);
 	if (!yytext || !buff)
 		eprintf("out of memory\n");
+	flowid = 128;
 
 	if (!cflag)
 		spawn();
