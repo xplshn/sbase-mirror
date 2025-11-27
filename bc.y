@@ -38,7 +38,7 @@ static char *code(char *, ...);
 static char *forcode(Macro *, char *, char *, char *, char *);
 static char *whilecode(Macro *, char *, char *);
 static char *ifcode(Macro *, char *, char *);
-static void funcode(Macro *, char *, char *, char *);
+static char *funcode(Macro *, char *, char *, char *);
 static Macro *define(char *, char *);
 static char *retcode(char *);
 static char *brkcode(void);
@@ -49,7 +49,6 @@ static char *var(char *);
 static char *ary(char *);
 static void writeout(char *);
 
-static size_t used;
 static char *yytext, *buff;
 static char *filename;
 static FILE *filep;
@@ -91,8 +90,8 @@ int cflag, dflag, lflag, sflag;
 %token AUTO
 %token PRINT
 
-%type <str> statlst scolonlst
-%type <str> assign nexpr expr exprstat rel stat ary cond
+%type <str> item statlst scolonlst
+%type <str> function assign nexpr expr exprstat rel stat ary cond
 %type <str> autolst arglst parlst
 %type <str> params param locals local
 %type <macro> def if for while
@@ -107,11 +106,14 @@ int cflag, dflag, lflag, sflag;
 %%
 
 program  :
-         | item program        {used = 0;}
+         | item program
          ;
 
 item     : scolonlst '\n'       {writeout($1);}
-         | def parlst '{' '\n' autolst statlst '}' {funcode($1, $2, $5, $6);}
+         | function             {writeout($1);}
+         ;
+
+function : def parlst '{' '\n' autolst statlst '}' {$$ = funcode($1, $2, $5, $6);}
          ;
 
 scolonlst:                      {$$ = code("");}
@@ -347,19 +349,19 @@ macro(int op, int id)
 	return d;
 }
 
-static void
+static char *
 funcode(Macro *d, char *params, char *vars, char *body)
 {
 	char *s, *t1, *t2;
 
 	t1 = code(vars, params);
 	t2 = code(t1, body);
-	s = code("[%s 0 1Q]s%c", t2, d->id);
-	nested--;
-	writeout(s);
 
+	nested--;
 	free(vars);
 	free(t1);
+
+	return code("[%s 0 1Q]s%c", t2, d->id);
 }
 
 static char *
@@ -757,7 +759,7 @@ bc(char *fname)
 	Macro *d;
 
 	lineno = 1;
-	used = nested = 0;
+	nested = 0;
 
 	macro(HOME, 0);
 	if (!fname) {
