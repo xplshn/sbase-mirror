@@ -39,6 +39,7 @@ static char *forcode(Macro *, char *, char *, char *, char *);
 static char *whilecode(Macro *, char *, char *);
 static char *ifcode(Macro *, char *, char *);
 static char *funcode(Macro *, char *, char *, char *);
+static char *param(char *, char *), *local(char *, char *);
 static Macro *define(char *, char *);
 static char *retcode(char *);
 static char *brkcode(void);
