@@ -49,7 +49,7 @@ static char *var(char *);
 static char *ary(char *);
 static void writeout(char *);
 
-static char *yytext, *buff;
+static char *yytext, *buff, *unwind;
 static char *filename;
 static FILE *filep;
 static int lineno, nerr, flowid;
@@ -158,29 +158,29 @@ for     : FOR                   {$$ = macro(LOOP);}
 def     : DEF ID                {$$ = macro(DEF);}
         ;
 
-parlst  : '(' ')'               {$$ = code("%%s");}
+parlst  : '(' ')'               {$$ = code("");}
         | '(' params ')'        {$$ = $2;}
         ;
 
-params  : param
-        | params ',' param      {$$ = code($1, $3); free($1);}
+params  : param                 {$$ = param(NULL, $1);}
+        | params ',' param      {$$ = param($1, $3);}
         ;
 
-param   : ID                    {$$ = code("S%s%%sL%ss.", var($1), var($1));}
-        | ID '[' ']'            {$$ = code("S%s%%sL%ss.", ary($1), ary($1));}
+param   : ID                    {$$ = var($1);}
+        | ID '[' ']'            {$$ = ary($1);}
         ;
 
-autolst :                       {$$ = code("%%s");}
+autolst :                       {$$ = code("");}
         | AUTO locals '\n'      {$$ = $2;}
         | AUTO locals ';'       {$$ = $2;}
         ;
 
-locals  : local
-        | locals ',' local      {$$ = code($1, $3); free($1);}
+locals  : local                 {$$ = local(NULL, $1);}
+        | locals ',' local      {$$ = local($1, $3);}
         ;
 
-local   : ID                    {$$ = code("0S%s%%sL%ss.", var($1), var($1));}
-        | ID '[' ']'            {$$ = code("0S%s%%sL%ss.", ary($1), ary($1));}
+local   : ID                    {$$ = var($1);}
+        | ID '[' ']'            {$$ = ary($1);}
         ;
 
 arglst  : expr
@@ -379,19 +379,50 @@ macro(int op)
 }
 
 static char *
+param(char *list, char *id)
+{
+	char *i1, *i2;
+
+	i1 = estrdup(id);
+	i2 = estrdup(id);
+	free(id);
+
+	unwind = code(unwind ? "L%ss.%s" : "L%ss.", i1, unwind);
+
+	return code(list ? "S%s%s" : "S%s" , i2, list);
+}
+
+static char *
+local(char *list, char *id)
+{
+	char *i1, *i2;
+
+	i1 = estrdup(id);
+	i2 = estrdup(id);
+	free(id);
+
+	unwind = code(unwind ? "L%ss.%s" : "L%ss.", i1, unwind);
+
+	return code(list ? "0S%s%s" : "0S%s" , i2, list);
+}
+
+static char *
 funcode(Macro *d, char *params, char *vars, char *body)
 {
-	char *s, *t1, *t2;
+	char *s;
 
-	t1 = code(vars, params);
-	t2 = code(t1, body);
-
+	s = code("[%s%s%s%s]s%c",
+	         vars, params,
+	         body,
+	         retcode(code(" 0")),
+	         d->id);
+	free(unwind);
+	unwind = NULL;
 	nested--;
 	inhome = 0;
-	free(vars);
-	free(t1);
 
-	return code("[%s 0 1Q]s%c", t2, d->id);
+
+	return s;
 }
 
 static char *
@@ -415,7 +446,7 @@ forcode(Macro *d, char *init, char *cmp, char *inc, char *body)
 	         body,
 	         inc,
 	         estrdup(cmp),
-	         d->flowid, d->id);
+	         d->id, d->id);
 	writeout(s);
 
 	s = code("%ss.%s%c", init, cmp, d->id);
@@ -432,7 +463,7 @@ whilecode(Macro *d, char *cmp, char *body)
 	s = code("[%ss.%s%c]s%c",
 	         body,
 	         estrdup(cmp),
-	         d->flowid, d->id);
+	         d->id, d->id);
 	writeout(s);
 
 	s = code("%s%c", cmp, d->id);
@@ -462,7 +493,7 @@ retcode(char *expr)
 
 	if (nested < 2 || macros[1].op != DEF)
 		yyerror("return must be in a function");
-	return code("%s %dQ", expr, nested - 1);
+	return code("%s %s %dQ", estrdup(unwind), expr, nested - 1);
 }
 
 static char *
