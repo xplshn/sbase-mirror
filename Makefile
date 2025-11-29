@@ -2,9 +2,10 @@
 include config.mk
 
 .SUFFIXES:
-.SUFFIXES: .o .c
+.SUFFIXES: .y .o .c
 
 CPPFLAGS =\
+	-DPREFIX=\"$(PREFIX)\" \
 	-D_DEFAULT_SOURCE \
 	-D_NETBSD_SOURCE \
 	-D_BSD_SOURCE \
@@ -94,6 +95,7 @@ LIB = libutf.a libutil.a
 
 BIN =\
 	basename\
+	bc\
 	cal\
 	cat\
 	chgrp\
@@ -218,7 +220,10 @@ $(OBJ) $(BIN): $(HDR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $<
 
 .c:
-	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $< $(LIB)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIB)
+
+bc: bc.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ bc.c $(LIB)
 
 $(MAKEOBJ): make/make.h
 
@@ -272,7 +277,7 @@ clean:
 	@cd tests && $(MAKE) clean
 	rm -f $(BIN) $(OBJ) $(LIB) sbase-box sbase-$(VERSION).tar.gz
 	rm -f scripts/make
-	rm -f getconf.h
+	rm -f getconf.h bc.c
 	rm -f proto
 	rm -rf build
 
