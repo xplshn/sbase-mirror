@@ -494,7 +494,7 @@ retcode(char *expr)
 
 	if (nested < 2 || macros[1].op != DEF)
 		yyerror("return must be in a function");
-	return code("%s %s %dQ", estrdup(unwind), expr, nested - 1);
+	return code("%s %s %dQ", expr, estrdup(unwind), nested - 1);
 }
 
 static char *
