@@ -8,6 +8,7 @@ trap 'rm -f $tmp' EXIT
 trap 'rm -f $tmp; kill -KILL $$' HUP INT TERM
 
 ../ed <<EOF > /dev/null
+../ed -s <<EOF > /dev/null
 0a
 This is important
 .
