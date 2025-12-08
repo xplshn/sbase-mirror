@@ -1385,13 +1385,14 @@ repeat:
 	      		join();
 		break;
 	case 'z':
-		if (nlines != 1)
+		if (nlines > 1)
 			goto bad_address;
 		if (isdigit(back(input())))
 			num = getnum();
 		else
 			num = 24;
 		chkprint(1);
+		deflines(curln, curln);
 		scroll(num);
 		break;
 	case 'k':
