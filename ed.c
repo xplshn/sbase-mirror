@@ -244,6 +244,7 @@ gettxt(int line)
 		return addchar('\0', &text);
 
 repeat:
+	chksignals();
 	if (!csize || off < lasto || off - lasto >= csize) {
 		block = off & ~(CACHESIZ-1);
 		if (lseek(scratch, block, SEEK_SET) < 0 ||
@@ -257,7 +258,7 @@ repeat:
 		++off;
 		addchar(*p, &text);
 	}
-	if (csize && p == buf + csize)
+	if (csize == CACHESIZ && p == buf + csize)
 		goto repeat;
 
 	addchar('\n', &text);
