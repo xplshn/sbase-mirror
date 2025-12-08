@@ -5,14 +5,8 @@ set -e
 tmp1=tmp1.$$
 tmp2=tmp2.$$
 
-cleanup()
-{
-	st=$?
-	rm -f $tmp1 $tmp2
-	exit $st
-}
-
-trap cleanup EXIT
+trap 'rm -f $tmp1 $tmp2' EXIT
+trap 'rm -f $tmp1 $tmp2; kill -KILL $$' HUP INT TERM
 
 cat <<EOF >$tmp1
 foo

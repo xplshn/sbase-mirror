@@ -4,14 +4,8 @@ set -e
 
 tmp=tmp1.$$
 
-cleanup()
-{
-	st=$?
-	rm -f $tmp
-	exit $st
-}
-
-trap cleanup EXIT
+trap 'rm -f $tmp' EXIT
+trap 'rm -f $tmp; kill -KILL $$' HUP INT TERM
 
 ../echo -n --hello-- --world--! > $tmp
 

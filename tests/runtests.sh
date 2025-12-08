@@ -2,14 +2,8 @@
 
 export TZ=UTC
 
-cleanup()
-{
-	st=$?
-	rm -f test.res
-	exit $st
-}
-
-trap cleanup EXIT HUP INT TERM
+trap 'rm -f test.res' EXIT HUP INT TERM
+trap 'rm -f test.res' HUP INT TERM
 
 for i in *-*.sh
 do

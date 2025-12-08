@@ -5,14 +5,8 @@ set -e
 res1=tmp1.$$
 res2=tmp2.$$
 
-cleanup()
-{
-	st=$?
-	rm -f $res1 $res2
-	exit $st
-}
-
-trap cleanup EXIT
+trap 'rm -f $res1 $res2' EXIT
+trap 'rm -f $res1 $res2; kill -KILL $$' HUP INT TERM
 
 (
 	../printf '123\n'
