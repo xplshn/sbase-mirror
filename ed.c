@@ -442,9 +442,14 @@ compile(int delim)
 static int
 match(int num)
 {
+	int r;
+
 	lastmatch = gettxt(num);
 	text.str[text.siz - 2] = '\0';
-	return !regexec(pattern, lastmatch, 10, matchs, 0);
+	r =!regexec(pattern, lastmatch, 10, matchs, 0);
+	text.str[text.siz - 2] = '\n';
+
+	return r;
 }
 
 static int
