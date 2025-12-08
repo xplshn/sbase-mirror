@@ -1402,7 +1402,7 @@ repeat:
 		scroll(num);
 		break;
 	case 'k':
-		if (nlines != 1)
+		if (nlines > 1)
 			goto bad_address;
 		if (!islower(c = input()))
 			error("invalid mark character");
