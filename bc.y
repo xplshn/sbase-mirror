@@ -88,7 +88,7 @@ int cflag, dflag, lflag, sflag;
 %token SCALE
 %token IBASE
 %token OBASE
-%token AUTO
+%token AUTO PARAM
 %token PRINT
 
 %type <str> item statlst scolonlst
@@ -381,7 +381,7 @@ macro(int op)
 }
 
 static char *
-param(char *list, char *id)
+decl(int type, char *list, char *id)
 {
 	char *i1, *i2;
 
@@ -389,23 +389,26 @@ param(char *list, char *id)
 	i2 = estrdup(id);
 	free(id);
 
-	unwind = code(unwind ? "L%ss.%s" : "L%ss.", i1, unwind);
+	if (!unwind)
+		unwind = estrdup("");
+	if (!list)
+		list = estrdup("");
 
-	return code(list ? "S%s%s" : "S%s" , i2, list);
+	unwind = code("%sL%ss.", unwind, i1);
+
+	return code((type == AUTO) ? "0S%s%s" : "S%s%s", i2, list);
+}
+
+static char *
+param(char *list, char *id)
+{
+	return decl(PARAM, list, id);
 }
 
 static char *
 local(char *list, char *id)
 {
-	char *i1, *i2;
-
-	i1 = estrdup(id);
-	i2 = estrdup(id);
-	free(id);
-
-	unwind = code(unwind ? "L%ss.%s" : "L%ss.", i1, unwind);
-
-	return code(list ? "0S%s%s" : "0S%s" , i2, list);
+	return decl(AUTO, list, id);
 }
 
 static char *
