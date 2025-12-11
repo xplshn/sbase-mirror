@@ -331,6 +331,7 @@ code(char *fmt, ...)
 
 err:
 	eprintf("unable to code requested operation\n");
+	return NULL;
 }
 
 static Macro *
@@ -638,6 +639,7 @@ end:
 
 toolong:
 	yyerror("too long number");
+	return 0;
 }
 
 static int
@@ -723,6 +725,7 @@ operand(int ch)
 			return NE;
 	default:
 		yyerror("invalid operand");
+		return 0;
 	}
 }
 
@@ -770,6 +773,8 @@ repeat:
 		}
 		return operand(ch);
 	}
+
+	return 0;
 }
 
 static void
