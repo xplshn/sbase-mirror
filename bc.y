@@ -194,12 +194,12 @@ cond    : '(' rel ')'           {$$ = $2;}
         ;
 
 rel     : expr                  {$$ = code("%s 0!=", $1);}
-        | expr EQ expr          {$$ = code("%s%s=", $3, $1);}
-        | expr LE expr          {$$ = code("%s%s!>", $3, $1);}
-        | expr GE expr          {$$ = code("%s%s!<", $3, $1);}
-        | expr NE expr          {$$ = code("%s%s!=", $3, $1);}
-        | expr '<' expr         {$$ = code("%s%s<", $3, $1);}
-        | expr '>' expr         {$$ = code("%s%s>", $3, $1);}
+        | expr EQ expr          {$$ = code("%s%s=", $1, $3);}
+        | expr LE expr          {$$ = code("%s%s!<", $1, $3);}
+        | expr GE expr          {$$ = code("%s%s!>", $1, $3);}
+        | expr NE expr          {$$ = code("%s%s!=", $1, $3);}
+        | expr '<' expr         {$$ = code("%s%s>", $1, $3);}
+        | expr '>' expr         {$$ = code("%s%s<", $1, $3);}
         ;
 
 exprstat: nexpr                 {$$ = code("%s%ss.", $1, code(sflag ? "" : "p"));}
