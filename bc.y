@@ -454,7 +454,7 @@ forcode(Macro *d, char *init, char *cmp, char *inc, char *body)
 	         d->id, d->id);
 	writeout(s);
 
-	s = code("%ss.%s%c", init, cmp, d->id);
+	s = code("%ss.%s%c ", init, cmp, d->id);
 	nested--;
 
 	return s;
@@ -471,7 +471,7 @@ whilecode(Macro *d, char *cmp, char *body)
 	         d->id, d->id);
 	writeout(s);
 
-	s = code("%s%c", cmp, d->id);
+	s = code("%s%c ", cmp, d->id);
 	nested--;
 
 	return s;
@@ -485,7 +485,7 @@ ifcode(Macro *d, char *cmp, char *body)
 	s = code("[%s]s%c", body, d->id);
 	writeout(s);
 
-	s = code("%s%c", cmp, d->id);
+	s = code("%s%c ", cmp, d->id);
 	nested--;
 
 	return s;
