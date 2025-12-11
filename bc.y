@@ -465,7 +465,7 @@ whilecode(Macro *d, char *cmp, char *body)
 {
 	char *s;
 
-	s = code("[%ss.%s%c]s%c",
+	s = code("[%s%s%c]s%c",
 	         body,
 	         estrdup(cmp),
 	         d->id, d->id);
