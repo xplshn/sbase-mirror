@@ -846,41 +846,6 @@ bc(char *fname)
 }
 
 static void
-loadlib(void)
-{
-	int r;
-	size_t len;
-	char bin[FILENAME_MAX], fname[FILENAME_MAX];
-	static char bclib[] = "bc.library";
-
-	/*
-	 * try first to load the library from the same directory than
-	 * the executable, because that can makes easier the tests
-	 * because it does not require to install to test the last version
-	 */
-	len = strlen(argv0);
-	if (len >= FILENAME_MAX)
-		goto share;
-	memcpy(bin, argv0, len + 1);
-
-	r = snprintf(fname, sizeof(fname), "%s/%s", dirname(bin), bclib);
-	if (r < 0 || r >= sizeof(fname))
-		goto share;
-
-	if (access(fname, F_OK) < 0)
-		goto share;
-
-	bc(fname);
-	return;
-
-share:
-	r = snprintf(fname, sizeof(fname), "%s/share/misc/%s", PREFIX, bclib);
-	if (r < 0 || r >= sizeof(fname))
-		eprintf("invalid path name for bc.library\n");
-	bc(fname);
-}
-
-static void
 usage(void)
 {
 	eprintf("usage: %s [-cdls]\n", argv0);
@@ -916,7 +881,7 @@ main(int argc, char *argv[])
 	if (!cflag)
 		spawn();
 	if (lflag)
-		loadlib();
+		bc(PREFIX "/bc.library");
 
 	while (*argv)
 		bc(*argv++);
