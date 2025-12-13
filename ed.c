@@ -795,7 +795,8 @@ dowrite(const char *fname, int trunc)
 	if (r)
 		error("input/output error");
 	strcpy(savfname, fname);
-	modflag = 0;
+	if (!sh)
+		modflag = 0;
 	curln = line;
 	if (optdiag)
 		printf("%zu\n", bytecount);
