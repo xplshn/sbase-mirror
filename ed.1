@@ -214,8 +214,16 @@ the addressed lines are appended to
 .Ar file
 instead.
 .It (.+1)
-Print the addressed line.
+An address without a command prints the addressed line.
 Sets the dot to that line.
+.It (+) Ns Ic z Ns Ar n
+Scrolls
+.Ar n
+lines starting at the addressed line.
+If
+.Ar n
+is not specified then
+it is defaulted to 24.
 .It ($)=
 Print the line number of the addressed line.
 The dot is unchanged.
@@ -238,7 +246,33 @@ The dot is unchanged.
 .Sh SEE ALSO
 .Xr sed 1 ,
 .Xr regexp 3
+.Rs
+.%A B. W. Kernighan
+.%T A Tutorial Introduction to the UNIX Text Editor
+.Re
+.Rs
+.Rs
+.%A B. W. Kernighan
+.%T Advanced Editing on UNIX
+.Re
+.Rs
+.%A B. W. Kernighan
+.%A P. J. Plauger
+.%B Software Tools
+.%O Addison-Wesley
+.%D 1976
+.Re
+.Rs
+.%A B. W. Kernighan
+.%A P. J. Plauger
+.%B Software Tools in Pascal
+.%O Addison-Wesley
+.%D 1981
+.Re
 .Sh STANDARDS
 POSIX.1-2013.
 Except where noted here:
 g and v operate on single commands rather than lists delimited with '\e'.
+The command
+.Cm z
+is an extension to that specification.
