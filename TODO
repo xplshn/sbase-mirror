@@ -34,38 +34,6 @@ ed
   .
   s/$/\\
 
-* cat <<EOF | ed
-    0a
-    int radix = 16;
-    int Pflag;
-    int Aflag;
-    int vflag;
-    int gflag;
-    int uflag;
-    int arflag;
-
-    .
-    ?radix?;/^$/-s/^/static /
-* cat <<EOF | ed
-    0a
-       Line
-    .
-    s# *##
-* cat <<EOF | ed
-    0a
-    line
-    .
-    1g/^$/p
-
-* cat <<EOF | ed
-    0a
-    line1
-    line2
-    line3
-    .
-    g/^$/d
-    ,p
-
 * Editing huge files doesn't work well.
 
 
