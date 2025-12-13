@@ -1,4 +1,4 @@
-.Dd December 27, 2016
+.Dd December 27, 2025
 .Dt ED 1
 .Os sbase
 .Sh NAME
@@ -107,8 +107,15 @@ uses the currently remembered filename.
 The remembered filename is set to
 .Ar file
 for later use.
+The current address is set to the last line read.
+.It e Ar !command
+Delete the contents of the buffer and load in the output of
+.Ar command .
+The remembered filename is not modified.
+The current address is set to the last line read.
 .It E Ar file
-As above, but without warning if the current buffer has unsaved changes.
+As the command e,
+but without warning if the current buffer has unsaved changes.
 .It f Ar file
 Set the currently remembered filename to
 .Ar file
@@ -235,4 +242,3 @@ The dot is unchanged.
 POSIX.1-2013.
 Except where noted here:
 g and v operate on single commands rather than lists delimited with '\e'.
-e, E, r, w, and W commands cannot accept shell escapes.

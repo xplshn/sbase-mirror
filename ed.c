@@ -804,18 +804,29 @@ dowrite(const char *fname, int trunc)
 static void
 doread(const char *fname)
 {
+	int r;
 	size_t cnt;
 	ssize_t len;
 	char *p;
 	FILE *aux;
 	static size_t n;
+	static int sh;
 	static char *s;
 	static FILE *fp;
 
-	if (fp)
-		fclose(fp);
-	if ((fp = fopen(fname, "r")) == NULL)
+	if (fp) {
+		sh ? pclose(fp) : fclose(fp);
+		fp = NULL;
+	}
+
+	if(fname[0] == '!') {
+		sh = 1;
+		fname++;
+		if((fp = popen(fname, "r")) == NULL)
+			error("bad exec");
+	} else if ((fp = fopen(fname, "r")) == NULL) {
 		error("cannot open input file");
+	}
 
 	curln = line2;
 	for (cnt = 0; (len = getline(&s, &n, fp)) > 0; cnt += (size_t)len) {
@@ -836,7 +847,8 @@ doread(const char *fname)
 
 	aux = fp;
 	fp = NULL;
-	if (fclose(aux))
+	r = sh ? pclose(aux) : fclose(aux);
+	if (r)
 		error("input/output error");
 }
 
@@ -926,16 +938,16 @@ getfname(int comm)
 		if (savfname[0] == '\0')
 			error("no current filename");
 		return savfname;
-	} else if (bp == &fname[FILENAME_MAX]) {
-		error("file name too long");
-	} else {
-		*bp = '\0';
-		if (savfname[0] == '\0' || comm == 'e' || comm == 'f')
-			strcpy(savfname, fname);
-		return fname;
 	}
+	if (bp == &fname[FILENAME_MAX])
+		error("file name too long");
+	*bp = '\0';
 
-	return NULL; /* not reached */
+	if (fname[0] == '!')
+		return fname;
+	if (savfname[0] == '\0' || comm == 'e' || comm == 'f')
+		strcpy(savfname, fname);
+	return fname;
 }
 
 static void
@@ -1443,10 +1455,9 @@ repeat:
 			goto unexpected;
 		if (modflag)
 			goto modified;
-		getfname(cmd);
 		setscratch();
 		deflines(curln, curln);
-		doread(savfname);
+		doread(getfname(cmd));
 		clearundo();
 		break;
 	default:
