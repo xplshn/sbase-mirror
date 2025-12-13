@@ -1431,6 +1431,15 @@ repeat:
 		chkprint(1);
 		optprompt ^= 1;
 		break;
+	case 'x':
+		trunc = 1;
+	case 'X':
+		ensureblank();
+		if (nlines > 0)
+			goto unexpected;
+		exstatus = 0;
+		deflines(nextln(0), lastln);
+		dowrite(getfname(cmd), trunc);
 	case 'Q':
 	case 'q':
 		if (nlines > 0)

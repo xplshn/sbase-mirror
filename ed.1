@@ -216,6 +216,16 @@ instead.
 .It (.+1)
 An address without a command prints the addressed line.
 Sets the dot to that line.
+.It (1,$)x file
+Like the w command
+but after saving the file
+it exits with an exit status of 0
+independently of previous errors.
+.It (1,$)X file
+Like the W command
+but after saving the file
+it exits with an exit status of 0
+independently of previous errors.
 .It (+) Ns Ic z Ns Ar n
 Scrolls
 .Ar n
@@ -273,6 +283,9 @@ The dot is unchanged.
 POSIX.1-2013.
 Except where noted here:
 g and v operate on single commands rather than lists delimited with '\e'.
-The command
-.Cm z
-is an extension to that specification.
+The command,
+.Cm z ,
+.Cm x ,
+and
+.Cm X
+are an extension to that specification.
