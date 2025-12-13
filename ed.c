@@ -1429,12 +1429,12 @@ repeat:
 		optprompt ^= 1;
 		break;
 	case 'Q':
-		modflag = 0;
 	case 'q':
 		if (nlines > 0)
 			goto unexpected;
-		if (modflag)
+		if (cmd != 'Q' && modflag)
 			goto modified;
+		modflag = 0;
 		quit();
 		break;
 	case 'f':
