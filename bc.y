@@ -15,7 +15,7 @@
 #include "util.h"
 
 #define DIGITS   "0123456789ABCDEF"
-#define NESTED_MAX 10
+#define NESTED_MAX 32
 
 #define funid(f) ((f)[0] - 'a' + 1)
 
