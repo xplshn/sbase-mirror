@@ -1448,17 +1448,17 @@ repeat:
 		chkprint(0);
 		break;
 	case 'E':
-		modflag = 0;
 	case 'e':
 		ensureblank();
 		if (nlines > 0)
 			goto unexpected;
-		if (modflag)
+		if (cmd == 'e' && modflag)
 			goto modified;
 		setscratch();
 		deflines(curln, curln);
 		doread(getfname(cmd));
 		clearundo();
+		modflag = 0;
 		break;
 	default:
 		error("unknown command");
