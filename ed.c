@@ -761,6 +761,7 @@ dowrite(const char *fname, int trunc)
 	FILE *aux;
 	static int sh;
 	static FILE *fp;
+	char *mode;
 
 	if (fp) {
 		sh ? pclose(fp) : fclose(fp);
@@ -774,7 +775,8 @@ dowrite(const char *fname, int trunc)
 			error("bad exec");
 	} else {
 		sh = 0;
-		if ((fp = fopen(fname, "w")) == NULL)
+		mode = (trunc) ? "w" : "a";
+		if ((fp = fopen(fname, mode)) == NULL)
 			error("cannot open input file");
 	}
 
