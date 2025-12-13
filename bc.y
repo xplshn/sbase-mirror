@@ -881,7 +881,7 @@ main(int argc, char *argv[])
 	if (!cflag)
 		spawn();
 	if (lflag)
-		bc(PREFIX "/bc.library");
+		bc(PREFIX "share/misc/bc.library");
 
 	while (*argv)
 		bc(*argv++);
