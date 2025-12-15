@@ -110,6 +110,7 @@ BIN =\
 	cron\
 	cut\
 	date\
+	dc\
 	dd\
 	dirname\
 	du\
