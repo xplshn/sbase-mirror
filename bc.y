@@ -15,7 +15,7 @@
 #include "util.h"
 
 #define DIGITS   "0123456789ABCDEF"
-#define NESTED_MAX 10
+#define NESTED_MAX 32
 
 #define funid(f) ((f)[0] - 'a' + 1)
 
@@ -88,7 +88,7 @@ int cflag, dflag, lflag, sflag;
 %token SCALE
 %token IBASE
 %token OBASE
-%token AUTO
+%token AUTO PARAM
 %token PRINT
 
 %type <str> item statlst scolonlst
@@ -194,12 +194,12 @@ cond    : '(' rel ')'           {$$ = $2;}
         ;
 
 rel     : expr                  {$$ = code("%s 0!=", $1);}
-        | expr EQ expr          {$$ = code("%s%s=", $3, $1);}
-        | expr LE expr          {$$ = code("%s%s!>", $3, $1);}
-        | expr GE expr          {$$ = code("%s%s!<", $3, $1);}
-        | expr NE expr          {$$ = code("%s%s!=", $3, $1);}
-        | expr '<' expr         {$$ = code("%s%s<", $3, $1);}
-        | expr '>' expr         {$$ = code("%s%s>", $3, $1);}
+        | expr EQ expr          {$$ = code("%s%s=", $1, $3);}
+        | expr LE expr          {$$ = code("%s%s!<", $1, $3);}
+        | expr GE expr          {$$ = code("%s%s!>", $1, $3);}
+        | expr NE expr          {$$ = code("%s%s!=", $1, $3);}
+        | expr '<' expr         {$$ = code("%s%s>", $1, $3);}
+        | expr '>' expr         {$$ = code("%s%s<", $1, $3);}
         ;
 
 exprstat: nexpr                 {$$ = code("%s%ss.", $1, code(sflag ? "" : "p"));}
@@ -331,6 +331,7 @@ code(char *fmt, ...)
 
 err:
 	eprintf("unable to code requested operation\n");
+	return NULL;
 }
 
 static Macro *
@@ -380,7 +381,7 @@ macro(int op)
 }
 
 static char *
-param(char *list, char *id)
+decl(int type, char *list, char *id)
 {
 	char *i1, *i2;
 
@@ -388,23 +389,26 @@ param(char *list, char *id)
 	i2 = estrdup(id);
 	free(id);
 
-	unwind = code(unwind ? "L%ss.%s" : "L%ss.", i1, unwind);
+	if (!unwind)
+		unwind = estrdup("");
+	if (!list)
+		list = estrdup("");
 
-	return code(list ? "S%s%s" : "S%s" , i2, list);
+	unwind = code("%sL%ss.", unwind, i1);
+
+	return code((type == AUTO) ? "0S%s%s" : "S%s%s", i2, list);
+}
+
+static char *
+param(char *list, char *id)
+{
+	return decl(PARAM, list, id);
 }
 
 static char *
 local(char *list, char *id)
 {
-	char *i1, *i2;
-
-	i1 = estrdup(id);
-	i2 = estrdup(id);
-	free(id);
-
-	unwind = code(unwind ? "L%ss.%s" : "L%ss.", i1, unwind);
-
-	return code(list ? "0S%s%s" : "0S%s" , i2, list);
+	return decl(AUTO, list, id);
 }
 
 static char *
@@ -450,7 +454,7 @@ forcode(Macro *d, char *init, char *cmp, char *inc, char *body)
 	         d->id, d->id);
 	writeout(s);
 
-	s = code("%ss.%s%c", init, cmp, d->id);
+	s = code("%ss.%s%c ", init, cmp, d->id);
 	nested--;
 
 	return s;
@@ -461,13 +465,13 @@ whilecode(Macro *d, char *cmp, char *body)
 {
 	char *s;
 
-	s = code("[%ss.%s%c]s%c",
+	s = code("[%s%s%c]s%c",
 	         body,
 	         estrdup(cmp),
 	         d->id, d->id);
 	writeout(s);
 
-	s = code("%s%c", cmp, d->id);
+	s = code("%s%c ", cmp, d->id);
 	nested--;
 
 	return s;
@@ -481,7 +485,7 @@ ifcode(Macro *d, char *cmp, char *body)
 	s = code("[%s]s%c", body, d->id);
 	writeout(s);
 
-	s = code("%s%c", cmp, d->id);
+	s = code("%s%c ", cmp, d->id);
 	nested--;
 
 	return s;
@@ -638,6 +642,7 @@ end:
 
 toolong:
 	yyerror("too long number");
+	return 0;
 }
 
 static int
@@ -723,6 +728,7 @@ operand(int ch)
 			return NE;
 	default:
 		yyerror("invalid operand");
+		return 0;
 	}
 }
 
@@ -770,6 +776,8 @@ repeat:
 		}
 		return operand(ch);
 	}
+
+	return 0;
 }
 
 static void
@@ -838,41 +846,6 @@ bc(char *fname)
 }
 
 static void
-loadlib(void)
-{
-	int r;
-	size_t len;
-	char bin[FILENAME_MAX], fname[FILENAME_MAX];
-	static char bclib[] = "bc.library";
-
-	/*
-	 * try first to load the library from the same directory than
-	 * the executable, because that can makes easier the tests
-	 * because it does not require to install to test the last version
-	 */
-	len = strlen(argv0);
-	if (len >= FILENAME_MAX)
-		goto share;
-	memcpy(bin, argv0, len + 1);
-
-	r = snprintf(fname, sizeof(fname), "%s/%s", dirname(bin), bclib);
-	if (r < 0 || r >= sizeof(fname))
-		goto share;
-
-	if (access(fname, F_OK) < 0)
-		goto share;
-
-	bc(fname);
-	return;
-
-share:
-	r = snprintf(fname, sizeof(fname), "%s/share/misc/%s", PREFIX, bclib);
-	if (r < 0 || r >= sizeof(fname))
-		eprintf("invalid path name for bc.library\n");
-	bc(fname);
-}
-
-static void
 usage(void)
 {
 	eprintf("usage: %s [-cdls]\n", argv0);
@@ -908,7 +881,7 @@ main(int argc, char *argv[])
 	if (!cflag)
 		spawn();
 	if (lflag)
-		loadlib();
+		bc(PREFIX "share/misc/bc.library");
 
 	while (*argv)
 		bc(*argv++);

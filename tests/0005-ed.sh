@@ -4,14 +4,8 @@ set -e
 
 tmp1=tmp1.$$
 
-cleanup()
-{
-	st=$?
-	rm -f $tmp1
-	exit $st
-}
-
-trap cleanup EXIT
+trap 'rm -f $tmp1' EXIT
+trap 'rm -f $tmp1; kill -KILL $$' HUP INT TERM
 
 ../ed <<EOF >$tmp1
 i

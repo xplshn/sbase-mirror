@@ -1,4 +1,4 @@
-.Dd December 27, 2016
+.Dd December 27, 2025
 .Dt ED 1
 .Os sbase
 .Sh NAME
@@ -107,8 +107,15 @@ uses the currently remembered filename.
 The remembered filename is set to
 .Ar file
 for later use.
+The current address is set to the last line read.
+.It e Ar !command
+Delete the contents of the buffer and load in the output of
+.Ar command .
+The remembered filename is not modified.
+The current address is set to the last line read.
 .It E Ar file
-As above, but without warning if the current buffer has unsaved changes.
+As the command e,
+but without warning if the current buffer has unsaved changes.
 .It f Ar file
 Set the currently remembered filename to
 .Ar file
@@ -207,8 +214,26 @@ the addressed lines are appended to
 .Ar file
 instead.
 .It (.+1)
-Print the addressed line.
+An address without a command prints the addressed line.
 Sets the dot to that line.
+.It (1,$)x file
+Like the w command
+but after saving the file
+it exits with an exit status of 0
+independently of previous errors.
+.It (1,$)X file
+Like the W command
+but after saving the file
+it exits with an exit status of 0
+independently of previous errors.
+.It (+) Ns Ic z Ns Ar n
+Scrolls
+.Ar n
+lines starting at the addressed line.
+If
+.Ar n
+is not specified then
+it is defaulted to 24.
 .It ($)=
 Print the line number of the addressed line.
 The dot is unchanged.
@@ -231,8 +256,36 @@ The dot is unchanged.
 .Sh SEE ALSO
 .Xr sed 1 ,
 .Xr regexp 3
+.Rs
+.%A B. W. Kernighan
+.%T A Tutorial Introduction to the UNIX Text Editor
+.Re
+.Rs
+.Rs
+.%A B. W. Kernighan
+.%T Advanced Editing on UNIX
+.Re
+.Rs
+.%A B. W. Kernighan
+.%A P. J. Plauger
+.%B Software Tools
+.%O Addison-Wesley
+.%D 1976
+.Re
+.Rs
+.%A B. W. Kernighan
+.%A P. J. Plauger
+.%B Software Tools in Pascal
+.%O Addison-Wesley
+.%D 1981
+.Re
 .Sh STANDARDS
 POSIX.1-2013.
 Except where noted here:
 g and v operate on single commands rather than lists delimited with '\e'.
-e, E, r, w, and W commands cannot accept shell escapes.
+The command,
+.Cm z ,
+.Cm x ,
+and
+.Cm X
+are an extension to that specification.

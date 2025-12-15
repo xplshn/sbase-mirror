@@ -29,7 +29,7 @@ static size_t curprocs, maxprocs = 1;
 static int    nerrors;
 static int    nulflag, nflag, pflag, rflag, tflag, xflag, Iflag;
 static char  *argb;
-static char  *cmd[NARGS];
+static char  **cmd;
 static char  *eofstr;
 
 static int
@@ -259,6 +259,7 @@ main(int argc, char *argv[])
 		argmaxsz = _POSIX_ARG_MAX;
 	/* Leave some room for environment variables */
 	argmaxsz -= 4096;
+	cmd = emalloc(NARGS * sizeof(*cmd));
 
 	ARGBEGIN {
 	case '0':

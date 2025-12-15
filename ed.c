@@ -244,6 +244,7 @@ gettxt(int line)
 		return addchar('\0', &text);
 
 repeat:
+	chksignals();
 	if (!csize || off < lasto || off - lasto >= csize) {
 		block = off & ~(CACHESIZ-1);
 		if (lseek(scratch, block, SEEK_SET) < 0 ||
@@ -257,7 +258,7 @@ repeat:
 		++off;
 		addchar(*p, &text);
 	}
-	if (csize && p == buf + csize)
+	if (csize == CACHESIZ && p == buf + csize)
 		goto repeat;
 
 	addchar('\n', &text);
@@ -441,9 +442,14 @@ compile(int delim)
 static int
 match(int num)
 {
+	int r;
+
 	lastmatch = gettxt(num);
 	text.str[text.siz - 2] = '\0';
-	return !regexec(pattern, lastmatch, 10, matchs, 0);
+	r =!regexec(pattern, lastmatch, 10, matchs, 0);
+	text.str[text.siz - 2] = '\n';
+
+	return r;
 }
 
 static int
@@ -755,6 +761,7 @@ dowrite(const char *fname, int trunc)
 	FILE *aux;
 	static int sh;
 	static FILE *fp;
+	char *mode;
 
 	if (fp) {
 		sh ? pclose(fp) : fclose(fp);
@@ -768,7 +775,8 @@ dowrite(const char *fname, int trunc)
 			error("bad exec");
 	} else {
 		sh = 0;
-		if ((fp = fopen(fname, "w")) == NULL)
+		mode = (trunc) ? "w" : "a";
+		if ((fp = fopen(fname, mode)) == NULL)
 			error("cannot open input file");
 	}
 
@@ -789,7 +797,8 @@ dowrite(const char *fname, int trunc)
 	if (r)
 		error("input/output error");
 	strcpy(savfname, fname);
-	modflag = 0;
+	if (!sh)
+		modflag = 0;
 	curln = line;
 	if (optdiag)
 		printf("%zu\n", bytecount);
@@ -798,18 +807,29 @@ dowrite(const char *fname, int trunc)
 static void
 doread(const char *fname)
 {
+	int r;
 	size_t cnt;
 	ssize_t len;
 	char *p;
 	FILE *aux;
 	static size_t n;
+	static int sh;
 	static char *s;
 	static FILE *fp;
 
-	if (fp)
-		fclose(fp);
-	if ((fp = fopen(fname, "r")) == NULL)
+	if (fp) {
+		sh ? pclose(fp) : fclose(fp);
+		fp = NULL;
+	}
+
+	if(fname[0] == '!') {
+		sh = 1;
+		fname++;
+		if((fp = popen(fname, "r")) == NULL)
+			error("bad exec");
+	} else if ((fp = fopen(fname, "r")) == NULL) {
 		error("cannot open input file");
+	}
 
 	curln = line2;
 	for (cnt = 0; (len = getline(&s, &n, fp)) > 0; cnt += (size_t)len) {
@@ -830,7 +850,8 @@ doread(const char *fname)
 
 	aux = fp;
 	fp = NULL;
-	if (fclose(aux))
+	r = sh ? pclose(aux) : fclose(aux);
+	if (r)
 		error("input/output error");
 }
 
@@ -920,16 +941,16 @@ getfname(int comm)
 		if (savfname[0] == '\0')
 			error("no current filename");
 		return savfname;
-	} else if (bp == &fname[FILENAME_MAX]) {
-		error("file name too long");
-	} else {
-		*bp = '\0';
-		if (savfname[0] == '\0' || comm == 'e' || comm == 'f')
-			strcpy(savfname, fname);
-		return fname;
 	}
+	if (bp == &fname[FILENAME_MAX])
+		error("file name too long");
+	*bp = '\0';
 
-	return NULL; /* not reached */
+	if (fname[0] == '!')
+		return fname;
+	if (savfname[0] == '\0' || comm == 'e' || comm == 'f')
+		strcpy(savfname, fname);
+	return fname;
 }
 
 static void
@@ -1385,17 +1406,18 @@ repeat:
 	      		join();
 		break;
 	case 'z':
-		if (nlines != 1)
+		if (nlines > 1)
 			goto bad_address;
 		if (isdigit(back(input())))
 			num = getnum();
 		else
 			num = 24;
 		chkprint(1);
+		deflines(curln, curln);
 		scroll(num);
 		break;
 	case 'k':
-		if (nlines != 1)
+		if (nlines > 1)
 			goto bad_address;
 		if (!islower(c = input()))
 			error("invalid mark character");
@@ -1409,13 +1431,22 @@ repeat:
 		chkprint(1);
 		optprompt ^= 1;
 		break;
+	case 'x':
+		trunc = 1;
+	case 'X':
+		ensureblank();
+		if (nlines > 0)
+			goto unexpected;
+		exstatus = 0;
+		deflines(nextln(0), lastln);
+		dowrite(getfname(cmd), trunc);
 	case 'Q':
-		modflag = 0;
 	case 'q':
 		if (nlines > 0)
 			goto unexpected;
-		if (modflag)
+		if (cmd != 'Q' && modflag)
 			goto modified;
+		modflag = 0;
 		quit();
 		break;
 	case 'f':
@@ -1429,18 +1460,17 @@ repeat:
 		chkprint(0);
 		break;
 	case 'E':
-		modflag = 0;
 	case 'e':
 		ensureblank();
 		if (nlines > 0)
 			goto unexpected;
-		if (modflag)
+		if (cmd == 'e' && modflag)
 			goto modified;
-		getfname(cmd);
 		setscratch();
 		deflines(curln, curln);
-		doread(savfname);
+		doread(getfname(cmd));
 		clearundo();
+		modflag = 0;
 		break;
 	default:
 		error("unknown command");
