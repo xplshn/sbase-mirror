@@ -679,10 +679,8 @@ getinput(void)
 		if (ch == '\\') {
 			if ((ch = getchar()) == EOF)
 				break;
-			if (ch != '\n') {
-				ungetc(ch, stdin);
-				ch = '\\';
-			}
+			if (ch != '\n')
+				addchar('\\', &cmdline);
 		}
 		addchar(ch, &cmdline);
 	}
@@ -1550,7 +1548,7 @@ savecmd(void)
 static void
 doglobal(void)
 {
-	int cnt, ln, k, idx;
+	int cnt, ln, k, idx, c;
 
 	skipblank();
 	gflag = 1;
@@ -1569,7 +1567,12 @@ doglobal(void)
 			if (!uflag) {
 				idx = inputidx;
 				getlst();
-				docmd();
+				for (;;) {
+					docmd();
+					if (!(c = input()))
+						break;
+					back(c);
+				}
 				inputidx = idx;
 				continue;
 			}
