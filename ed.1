@@ -100,7 +100,7 @@ Otherwise, the dot is set to the line before the deleted range.
 .It e Ar file
 Delete the contents of the buffer and load in
 .Ar file
-for editing, printing the bytes read to standard output.
+for editing, printing the number of bytes read to standard output.
 If no filename is given,
 .Nm
 uses the currently remembered filename.
@@ -108,14 +108,15 @@ The remembered filename is set to
 .Ar file
 for later use.
 The current address is set to the last line read.
+.It E Ar file
+As above,
+but without warning if the current buffer has unsaved changes.
 .It e Ar !command
 Delete the contents of the buffer and load in the output of
-.Ar command .
+.Ar command ,
+printing the number of bytes read to standard output.
 The remembered filename is not modified.
 The current address is set to the last line read.
-.It E Ar file
-As the command e,
-but without warning if the current buffer has unsaved changes.
 .It f Ar file
 Set the currently remembered filename to
 .Ar file
@@ -177,7 +178,7 @@ As above, but without warning if the current buffer has unsaved changes.
 Read in
 .Ar file
 and append it to the current buffer at the addressed line,
-printing the bytes read to standard output.
+printing the number of bytes read to standard output.
 The currently remembered filename isn't changed unless it's empty.
 An address of 0 reads the
 .Ar file
@@ -185,10 +186,8 @@ into the start of the buffer.
 .It ($)r Ar !command
 Execute the
 .Ar command
-and append its output in the current buffer at the addressed line.
-When
-.Ar command
-returns a '!' is printed.
+and append its output in the current buffer at the addressed line,
+printing the number of bytes read to standard output.
 The currently remembered filename isn't changed.
 An address of 0 reads the output of
 .Ar command
@@ -229,10 +228,8 @@ the addressed lines are appended to
 instead.
 .It (1,$)w Ar !command
 Write the addressed lines to the standard input of
-.Ar command .
-When
-.Ar command
-returns a '!' is printed.
+.Ar command ,
+printing the number of bytes written to standard output.
 The dot is unchanged.
 .It (.+1)
 An address without a command prints the addressed line.
