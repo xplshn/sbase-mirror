@@ -176,9 +176,23 @@ As above, but without warning if the current buffer has unsaved changes.
 .It ($)r Ar file
 Read in
 .Ar file
-and append it to the current buffer, printing the bytes read to standard output.
+and append it to the current buffer at the addressed line,
+printing the bytes read to standard output.
 The currently remembered filename isn't changed unless it's empty.
-An address of 0 reads the file into the start of the buffer.
+An address of 0 reads the
+.Ar file
+into the start of the buffer.
+.It ($)r Ar !command
+Execute the
+.Ar command
+and append its output in the current buffer at the addressed line.
+When
+.Ar command
+returns a '!' is printed.
+The currently remembered filename isn't changed.
+An address of 0 reads the output of
+.Ar command
+into the start of the buffer.
 .It (.,.)s/re/replacement/flags
 Substitute re for replacement in lines matching re.
 An & within replacement is replaced with the whole string matched by re.
@@ -213,17 +227,26 @@ As above, but instead of overwriting the contents of
 the addressed lines are appended to
 .Ar file
 instead.
+.It (1,$)w Ar !command
+Write the addressed lines to the standard input of
+.Ar command .
+When
+.Ar command
+returns a '!' is printed.
+The dot is unchanged.
 .It (.+1)
 An address without a command prints the addressed line.
 Sets the dot to that line.
-.It (1,$)x file
+.It (1,$)x Ar file
 Like the w command
-but after saving the file
+but after saving the
+.Ar file
 it exits with an exit status of 0
 independently of previous errors.
-.It (1,$)X file
+.It (1,$)X Ar file
 Like the W command
-but after saving the file
+but after saving the
+.Ar file
 it exits with an exit status of 0
 independently of previous errors.
 .It (+) Ns Ic z Ns Ar n
@@ -256,6 +279,28 @@ When
 returns a '!' is printed.
 The dot is unchanged.
 .El
+.Sh ASYNCHRONOUS EVENTS
+.Bl -tag -width "SIGQUIT"
+.It Dv SIGHUP
+If the current buffer has changed since it was last written,
+.Nm
+attempts to write the buffer to the file
+.Pa ed.hup .
+Nothing is written to the currently remembered file, and
+.Nm
+exits.
+.It Dv SIGINT
+When an interrupt occurs,
+.Nm
+prints
+.Sq ?\en
+and returns to command mode.
+If interrupted during text input,
+the text already input is written to the current buffer,
+as if text input had been normally terminated.
+.It Dv SIGQUIT
+This signal is ignored.
+.El
 .Sh SEE ALSO
 .Xr sed 1 ,
 .Xr regexp 3
@@ -285,7 +330,6 @@ The dot is unchanged.
 .Sh STANDARDS
 POSIX.1-2013.
 Except where noted here:
-g and v operate on single commands rather than lists delimited with '\e'.
 The command,
 .Cm z ,
 .Cm x ,
