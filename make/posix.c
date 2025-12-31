@@ -12,6 +12,17 @@
 
 #include "make.h"
 
+
+static volatile pid_t pid;
+
+void
+killchild(void)
+{
+	if (pid != 0)
+		kill(pid, SIGTERM);
+	pid = 0;
+}
+
 int
 is_dir(char *fname)
 {
@@ -49,13 +60,12 @@ int
 launch(char *cmd, int ignore)
 {
 	int st;
-	pid_t pid;
+	sigset_t new, old;
 	char *name, *shell;
 	char *args[] = {NULL, "-ec" , cmd, NULL};
 	static int initsignals;
 	extern char **environ;
 	extern void sighandler(int);
-
 
 	if (!initsignals) {
 		struct sigaction act = {
@@ -70,10 +80,25 @@ launch(char *cmd, int ignore)
 		initsignals = 1;
 	}
 
+	sigfillset(&new);
+	sigprocmask(SIG_BLOCK, &new, &old);
+	if (stop)
+		goto unblock;
+
 	switch (pid = fork()) {
 	case -1:
+		perror("make");
+	unblock:
+		sigprocmask(SIG_SETMASK, &old, NULL);
 		return -1;
 	case 0:
+		signal(SIGINT, SIG_DFL);
+		signal(SIGHUP, SIG_DFL);
+		signal(SIGTERM, SIG_DFL);
+		signal(SIGQUIT, SIG_DFL);
+
+		sigprocmask(SIG_SETMASK, &old, NULL);
+
 		shell = getmacro("SHELL");
 
 		if (ignore)
@@ -86,10 +111,8 @@ launch(char *cmd, int ignore)
 		execve(shell, args, environ);
 		_exit(127);
 	default:
-		if (wait(&st) < 0) {
-			kill(pid, SIGTERM);
-			wait(&st);
-		}
+		sigprocmask(SIG_SETMASK, &old, NULL);
+		wait(&st);
 
 		return st;
 	}
