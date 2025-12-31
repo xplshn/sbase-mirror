@@ -1,4 +1,4 @@
-.Dd December 27, 2025
+.Dd December 31, 2025
 .Dt ED 1
 .Os sbase
 .Sh NAME
@@ -233,7 +233,10 @@ lines starting at the addressed line.
 If
 .Ar n
 is not specified then
-it is defaulted to 24.
+the value of $LINES - 1 is used.
+If the value of
+.Ar n
+is 0 or negative then the default value of 23 is used.
 .It ($)=
 Print the line number of the addressed line.
 The dot is unchanged.

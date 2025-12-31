@@ -1270,6 +1270,7 @@ subst(int nth)
 static void
 docmd(void)
 {
+	char *var;
 	int cmd, c, line3, num, trunc;
 
 repeat:
@@ -1406,10 +1407,14 @@ repeat:
 	case 'z':
 		if (nlines > 1)
 			goto bad_address;
+
+		num = 0;
 		if (isdigit(back(input())))
 			num = getnum();
-		else
-			num = 24;
+		else if ((var = getenv("LINES")) != NULL)
+			num = atoi(var) - 1;
+		if (num <= 0)
+			num = 23;
 		chkprint(1);
 		deflines(curln, curln);
 		scroll(num);
