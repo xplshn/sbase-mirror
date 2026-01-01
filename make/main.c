@@ -90,6 +90,7 @@ estrdup(char *s)
 void
 sighandler(int signo)
 {
+	killchild();
 	stop = signo;
 }
 

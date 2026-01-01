@@ -43,35 +43,36 @@ struct target {
 	struct target *next;
 };
 
-extern void *emalloc(size_t);
-extern void *erealloc(void *, size_t);
-extern char *estrdup(char *);
+void *emalloc(size_t);
+void *erealloc(void *, size_t);
+char *estrdup(char *);
 
-extern void dumprules(void);
-extern void dumpmacros(void);
+void dumprules(void);
+void dumpmacros(void);
 
-extern char *expandstring(char *, Target *, struct loc *);
-extern void addtarget(char *, int);
-extern void inject(char *);
-extern int build(char *);
-extern int hash(char *);
-extern int parse(char *);
-extern void debug(char *, ...);
-extern void error(char *, ...);
-extern void warning(char *, ...);
-extern void adddep(char *, char *);
-extern void addrule(char *, struct action *, int);
-extern void freeloc(struct loc *);
+char *expandstring(char *, Target *, struct loc *);
+void addtarget(char *, int);
+void inject(char *);
+int build(char *);
+int hash(char *);
+int parse(char *);
+void debug(char *, ...);
+void error(char *, ...);
+void warning(char *, ...);
+void adddep(char *, char *);
+void addrule(char *, struct action *, int);
+void freeloc(struct loc *);
 
-extern char *getmacro(char *);
-extern void setmacro(char *, char *, int, int);
+char *getmacro(char *);
+void setmacro(char *, char *, int, int);
 
 /* system depdendant */
-extern time_t stamp(char *);
-extern int launch(char *, int);
-extern int putenv(char *);
-extern void exportvar(char *, char *);
-extern int is_dir(char *);
+void killchild(void);
+time_t stamp(char *);
+int launch(char *, int);
+int putenv(char *);
+void exportvar(char *, char *);
+int is_dir(char *);
 
 /* main.c */
 extern int kflag, dflag, nflag, iflag, sflag;

@@ -1,4 +1,4 @@
-.Dd December 12, 2025
+.Dd December 31, 2025
 .Dt BC 1
 .Os sbase
 .Sh NAME
@@ -55,6 +55,9 @@ Variables are single lowercase letters
 through
 .Ql z .
 Variables hold arbitrary-precision numbers and are automatically initialized to 0.
+The special variable .
+holds the value of the last expression calculated,
+useful to avoid retyping long numbers.
 .Ss Arrays
 Array elements are referenced as
 .Ar name Ns Oo Ar expr Oc .
@@ -82,18 +85,48 @@ Default is 10.
 .Ss Operators
 Arithmetic operators in order of precedence (highest to lowest):
 .Bl -tag -width "^"
-.It Ic \&^ or ^=
+.It Ic \&^ ^=
 Exponentiation (right associative).
 The exponent is truncated to an integer.
-.It Ic * / % or *= /= %=
+.It Ic * / % *= /= %=
 Multiplication, division, modulus.
-.It Ic + \- or += \-=
+.It Ic + \- += \-=
 Addition, subtraction.
 .It Ic ++ \-\-
 Increment and decrement (prefix or postfix).
 .It Ic =
 Assignment.
 .El
+.Ss Built-in Functions
+.Bl -tag -width "length(expr)"
+.It Fn sqrt expr
+Square root of
+.Ar expr .
+.It Fn length expr
+Number of significant decimal digits in
+.Ar expr .
+.It Fn scale expr
+Number of digits after the decimal point in
+.Ar expr .
+.El
+.Ss Expressions
+.Pp
+Expressions are combinations of operators,
+function calls,
+numbers and variables following the
+normal arithmetic rules.
+Parenthesis can be used to modify the precedence of operators.
+.Ss Relational
+.Pp
+Relational expressions are composed by
+expressions combined using relational operators.
+They only can be used in the context of
+a
+.Ic if ,
+.Ic while
+or
+.Ic for
+statements.
 .Pp
 Relational operators:
 .Bl -tag -width "!="
@@ -110,21 +143,19 @@ Greater than.
 .It Ic >=
 Greater than or equal to.
 .El
-.Ss Built-in Functions
-.Bl -tag -width "length(expr)"
-.It Fn sqrt expr
-Square root of
-.Ar expr .
-.It Fn length expr
-Number of significant decimal digits in
-.Ar expr .
-.It Fn scale expr
-Number of digits after the decimal point in
-.Ar expr .
-.El
 .Ss Statements
 .Bl -tag -width Ds
-.It Ic print expr
+.It Ar expr
+A expression in a single line,
+or separated by the character
+.Ar ;
+is a statement.
+If the expression is not an assignment expression then
+the result value is printed to stdout
+unless the option
+.Ic -s
+is used.
+.It Ic print Ar expr
 Print the value of
 .Ar expr
 followed by a newline.
@@ -132,7 +163,7 @@ followed by a newline.
 Print
 .Ar string
 without a newline.
-.It Ic print Qo Ar string Qc , expr
+.It Ic print Qo Ar string Qc , Ar expr
 Print
 .Ar string
 without a newline, then print
@@ -154,7 +185,12 @@ repeatedly while
 is non-zero.
 .It Ic for ( Ar expr1 ; Ar rel ; Ar expr2 ) Ar stat
 Equivalent to
-.Ql Ar expr1 ; while ( Ar rel ) { Ar stat ; Ar expr2 } .
+.Ar expr1 ;
+.Ic while ( Ar rel )
+{
+.Ar stat ;
+.Ar expr2
+}.
 The 3 components of the for loop are required.
 .It Ic break
 Exit from the innermost
@@ -169,11 +205,13 @@ when the statement is read,
 independently of being under an if statement or in a function.
 .It Ic return
 Return 0 from a function.
+.It Ic return ( )
+Return 0 from a function.
 .It Ic return ( Ar expr )
 Return
 .Ar expr
 from a function.
-.It Ic { Ar stat-list }
+.It Ic { Ar stat-list Ic }
 Group statements.
 .El
 .Ss Function Definitions
@@ -190,7 +228,7 @@ than the define statement.
 Function names are single lowercase letters.
 Parameters and local variables are comma-separated lists of simple
 variables or arrays (denoted by
-.Ar name Ns Ic [] ) .
+.Ar array Ns Ic [] ) .
 The
 .Ic auto
 statement is optional and must appear first in the function body if present.
@@ -198,13 +236,19 @@ statement is optional and must appear first in the function body if present.
 Functions are called as
 .Fn name arguments .
 Array arguments must be passed as
-.Ar name Ns Ic [] .
+.Ar array Ns Ic [] .
 Functions return a value using the
 .Ic return
 statement.
 If no
 .Ic return
 is executed, the function returns 0.
+.Ss Namespaces
+The variables, arrays and function names
+are composed of only one letter,
+but they are independent namespaces.
+The same letter can be used for a variable,
+array or function without problems.
 .Sh LIBRARY
 When invoked with the
 .Fl l

@@ -62,10 +62,11 @@ lookup(char *name)
 static void
 cleanup(Target *tp)
 {
-	int precious;
+	int sig, precious;
 	Target *p, **q;
 
-	printf("make: signal %d arrived\n", stop);
+	sig = stop;
+	printf("make: signal %d arrived\n", sig);
 
 	precious = 0;
 	p = lookup(".PRECIOUS");
@@ -81,8 +82,8 @@ cleanup(Target *tp)
 		remove(tp->name);
 	}
 
-	signal(stop, SIG_DFL);
-	raise(stop);
+	signal(sig, SIG_DFL);
+	raise(sig);
 }
 
 static int

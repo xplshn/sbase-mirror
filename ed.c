@@ -679,10 +679,8 @@ getinput(void)
 		if (ch == '\\') {
 			if ((ch = getchar()) == EOF)
 				break;
-			if (ch != '\n') {
-				ungetc(ch, stdin);
-				ch = '\\';
-			}
+			if (ch != '\n')
+				addchar('\\', &cmdline);
 		}
 		addchar(ch, &cmdline);
 	}
@@ -1272,6 +1270,7 @@ subst(int nth)
 static void
 docmd(void)
 {
+	char *var;
 	int cmd, c, line3, num, trunc;
 
 repeat:
@@ -1408,10 +1407,14 @@ repeat:
 	case 'z':
 		if (nlines > 1)
 			goto bad_address;
+
+		num = 0;
 		if (isdigit(back(input())))
 			num = getnum();
-		else
-			num = 24;
+		else if ((var = getenv("LINES")) != NULL)
+			num = atoi(var) - 1;
+		if (num <= 0)
+			num = 23;
 		chkprint(1);
 		deflines(curln, curln);
 		scroll(num);
@@ -1550,7 +1553,7 @@ savecmd(void)
 static void
 doglobal(void)
 {
-	int cnt, ln, k, idx;
+	int cnt, ln, k, idx, c;
 
 	skipblank();
 	gflag = 1;
@@ -1569,7 +1572,12 @@ doglobal(void)
 			if (!uflag) {
 				idx = inputidx;
 				getlst();
-				docmd();
+				for (;;) {
+					docmd();
+					if (!(c = input()))
+						break;
+					back(c);
+				}
 				inputidx = idx;
 				continue;
 			}

@@ -275,7 +275,8 @@ sbase-box: $(BIN)
 
 clean:
 	@cd tests && $(MAKE) clean
-	rm -f $(BIN) $(OBJ) $(LIB) sbase-box sbase-$(VERSION).tar.gz
+	rm -f *.o
+	rm -f $(BIN) $(LIB) sbase-box sbase-$(VERSION).tar.gz
 	rm -f scripts/make
 	rm -f getconf.h bc.c
 	rm -f proto

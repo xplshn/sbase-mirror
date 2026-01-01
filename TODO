@@ -28,13 +28,10 @@ Bugs
 
 ed
 --
-* cat <<EOF | ed
-  i
-  LLL
-  .
-  s/$/\\
 
 * Editing huge files doesn't work well.
+* Using % in shell escapes of r, e, E, w, W, x and X commands.
+* Using !! in shell escapes of r, e, E, w, W, x and X commands.
 
 
 printf
