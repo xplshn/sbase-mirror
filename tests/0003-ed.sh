@@ -6,7 +6,7 @@ tmp1=tmp1.$$
 tmp2=tmp2.$$
 
 trap 'rm -f $tmp1 $tmp2' EXIT
-trap 'rm -f $tmp1 $tmp2; kill -KILL $$' HUP INT TERM
+trap 'exit $?' HUP INT TERM
 
 cat <<EOF >$tmp1
 foo

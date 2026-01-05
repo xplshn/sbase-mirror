@@ -3,7 +3,7 @@
 tmp=tmp.$$
 
 trap 'rm -f $tmp' EXIT
-trap 'rm -f $tmp' HUP INT TERM
+trap 'exit $?' HUP INT TERM
 
 cat <<EOF >$tmp
 y

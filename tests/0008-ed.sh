@@ -5,7 +5,7 @@ set -e
 tmp=tmp.$$
 
 trap 'rm -f $tmp' EXIT
-trap 'rm -f $tmp; kill -KILL $$' HUP INT TERM
+trap 'exit $?' HUP INT TERM
 
 ../ed -s <<EOF > /dev/null
 0a

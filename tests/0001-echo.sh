@@ -5,7 +5,7 @@ set -e
 tmp=tmp1.$$
 
 trap 'rm -f $tmp' EXIT
-trap 'rm -f $tmp; kill -KILL $$' HUP INT TERM
+trap 'exit $?' HUP INT TERM
 
 ../echo -n --hello-- --world--! > $tmp
 
