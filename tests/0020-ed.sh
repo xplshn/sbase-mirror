@@ -2,7 +2,7 @@
 tmp=tmp.$$
 
 trap 'rm -f $tmp' EXIT
-trap 'rm -f $tmp; kill -KILL $$' HUP INT TERM
+trap 'exit $?' HUP INT TERM
 
 set -e
 

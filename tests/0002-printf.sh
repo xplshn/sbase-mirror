@@ -6,7 +6,7 @@ res1=tmp1.$$
 res2=tmp2.$$
 
 trap 'rm -f $res1 $res2' EXIT
-trap 'rm -f $res1 $res2; kill -KILL $$' HUP INT TERM
+trap 'exit $?' HUP INT TERM
 
 (
 	../printf '123\n'

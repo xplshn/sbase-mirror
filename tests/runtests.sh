@@ -3,7 +3,7 @@
 export TZ=UTC
 
 trap 'rm -f test.res' EXIT HUP INT TERM
-trap 'rm -f test.res' HUP INT TERM
+trap 'exit $?' HUP INT TERM
 
 for i in *-*.sh
 do

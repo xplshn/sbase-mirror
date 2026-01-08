@@ -3,7 +3,7 @@
 tmp=tmp.$$
 
 trap 'rm -f $tmp' EXIT
-trap 'rm -f $tmp; kill -KILL $$' HUP INT TERM
+trap 'exit $?' HUP INT TERM
 
 touch $tmp
 ../ed -s $tmp <<EOF | (read a && test $a = 1)
