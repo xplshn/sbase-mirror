@@ -1,6 +1,6 @@
 #!/bin/sh
 
-../ed -s /dev/null <<EOF | wc -l | grep 0 >/dev/null
+$EXEC ../ed -s /dev/null <<EOF | wc -l | grep 0 >/dev/null
 a
 line
 .

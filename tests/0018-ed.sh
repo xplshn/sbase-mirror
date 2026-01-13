@@ -6,7 +6,7 @@ trap 'rm -f $tmp' EXIT
 trap 'exit $?' HUP INT TERM
 
 touch $tmp
-../ed -s $tmp <<EOF | (read a && test $a = 1)
+$EXEC ../ed -s $tmp <<EOF | (read a && test $a = 1)
 a
 1
 .

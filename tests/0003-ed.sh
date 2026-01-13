@@ -16,7 +16,7 @@ baz
 EOF
 
 # Unspecified whether quit with a dirty buffer is considered an error, allow both
-../ed $tmp1 <<EOF >$tmp2 || test $? -eq 1
+$EXEC ../ed $tmp1 <<EOF >$tmp2 || test $? -eq 1
 v#^\$#p
 p
 g/^\$/d

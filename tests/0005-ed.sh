@@ -7,7 +7,7 @@ tmp1=tmp1.$$
 trap 'rm -f $tmp1' EXIT
 trap 'exit $?' HUP INT TERM
 
-../ed <<EOF >$tmp1
+$EXEC ../ed <<EOF >$tmp1
 i
 foo
 bar

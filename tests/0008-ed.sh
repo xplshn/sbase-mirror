@@ -7,7 +7,7 @@ tmp=tmp.$$
 trap 'rm -f $tmp' EXIT
 trap 'exit $?' HUP INT TERM
 
-../ed -s <<EOF > /dev/null
+$EXEC ../ed -s <<EOF > /dev/null
 0a
 This is important
 .

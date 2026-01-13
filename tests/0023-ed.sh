@@ -9,7 +9,7 @@ cat <<EOF >$tmp
 Line
 EOF
 
-ed -s /dev/null <<EOF | diff -u $tmp -
+$EXEC timeout 5 ../ed -s /dev/null <<EOF | diff -u $tmp -
 0a
    Line
 .

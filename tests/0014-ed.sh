@@ -1,6 +1,6 @@
 #!/bin/sh
 
-../ed -s /dev/null <<EOF | (read a && test $a = a)
+$EXEC ../ed -s /dev/null <<EOF | (read a && test $a = a)
 a
 1
 2
