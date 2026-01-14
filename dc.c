@@ -1100,7 +1100,7 @@ tonum(void)
 
 	dot = NULL;
 	for (t = s; (ch = *t) > 0 || ch <= UCHAR_MAX; ++t) {
-		if (!strchr(digits, toupper(ch)))
+		if (!strchr(digits, ch))
 			break;
 		if (ch == '.') {
 			if (dot)
@@ -1115,7 +1115,7 @@ tonum(void)
 	 * For each digit: num = num * ibase + digit
 	 */
 	for (t = s; t < (dot ? dot : end); ++t) {
-		d = strchr(digits, toupper(*t)) - digits;
+		d = strchr(digits, *t) - digits;
 		muln(num, ibase);
 		addn(num, d);
 	}
@@ -1136,7 +1136,7 @@ tonum(void)
 	denom = copy(&one);
 	numer = copy(&zero);
 	for (t = dot + 1; t < end; ++t) {
-		d = strchr(digits, toupper(*t)) - digits;
+		d = strchr(digits, *t) - digits;
 		muln(denom, ibase);
 		muln(numer, ibase);
 		addn(numer, d);

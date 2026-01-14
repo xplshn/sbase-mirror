@@ -22,9 +22,7 @@ Numbers are arbitrary-precision decimal values.
 Numbers may contain a decimal point and use
 .Ql _
 as a negative sign prefix.
-When the input base is greater than 10, letters A-F or a-f represent digits 10-15.
-A hexadecimal number beginning with a lower case letter
-must be preceded by a zero to distinguish it from the command associated with the letter.
+When the input base is greater than 10, letters A-F represent digits 10-15.
 .Sh OPTIONS
 .Bl -tag -width Ds
 .It Fl i
@@ -252,9 +250,8 @@ The
 .Fl i
 flag,
 .Ic #
-comments,
+comments and
 the
 .Ic ~
-operator, and lowercase hexadecimal digits
-.Pq a-f
+operator
 are extensions to the traditional dc specification.
