@@ -287,7 +287,7 @@ next(Num *num)
 }
 
 static void
-truncate(Num *num)
+numtrunc(Num *num)
 {
 	num->wp = num->rp;
 	if (num->rp != num->buf)
@@ -326,13 +326,13 @@ rshift(Num *num, int n)
 	diff = length(num) - n;
 	if (diff < 0) {
 		first(num);
-		truncate(num);
+		numtrunc(num);
 		return;
 	}
 
 	memmove(num->buf, num->buf + n, diff);
 	num->rp = num->buf + diff;
-	truncate(num);
+	numtrunc(num);
 }
 
 static void
@@ -373,7 +373,7 @@ chsign(Num *num)
 			wrdigit(num, -1);
 	} else {
 		if (peek(num) == 0)
-			truncate(num);
+			numtrunc(num);
 	}
 
 	return num;
@@ -404,14 +404,14 @@ static Num *
 norm(Num *n)
 {
 	/* trailing 0 */
-	for (last(n); peek(n) == 0; truncate(n))
+	for (last(n); peek(n) == 0; numtrunc(n))
 		;
 
 	if (negative(n)) {
 		for (prev(n); peek(n) == 99; prev(n)) {
 			poke(n, -1);
 			next(n);
-			truncate(n);
+			numtrunc(n);
 		}
 	}
 
@@ -428,7 +428,7 @@ mulnto(Num *src, Num *dst, int n)
 	int d, carry;
 
 	first(dst);
-	truncate(dst);
+	numtrunc(dst);
 
 	carry = 0;
 	for (first(src); more(src); next(src)) {
@@ -999,7 +999,7 @@ isqrt(int n)
  * To compute sqrt with scale decimal places of precision:
  * 1. Scale up y by 10^(2*scale + 2) (extra 2 for guard digits)
  * 2. Compute integer sqrt
- * 3. Result has (scale + 1) decimal places, truncate to scale
+ * 3. Result has (scale + 1) decimal places, numtrunc to scale
  */
 static Num *
 sqrtnum(Num *oy)
