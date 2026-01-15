@@ -11,7 +11,7 @@ y
 /dev/null
 EOF
 
-../ed -s /dev/null <<EOF  | diff -u $tmp -
+$EXEC ../ed -s /dev/null <<EOF  | diff -u $tmp -
 a
 1
 2

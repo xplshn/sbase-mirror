@@ -12,7 +12,7 @@ static int gflag = 0;
 extern long arflag = 0;
 EOF
 
-../ed -s /dev/null <<'EOF' | diff -u $tmp -
+$EXEC ../ed -s /dev/null <<'EOF' | diff -u $tmp -
 i
 LLL
 .

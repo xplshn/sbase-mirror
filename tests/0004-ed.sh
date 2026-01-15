@@ -9,7 +9,7 @@ trap 'rm -f $tmp1 $tmp2' EXIT
 trap 'exit $?' HUP INT TERM
 
 printf foo >$tmp1
-../ed $tmp1 <<EOF >$tmp2
+$EXEC ../ed $tmp1 <<EOF >$tmp2
 ,p
 w
 EOF

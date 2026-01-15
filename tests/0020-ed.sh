@@ -6,7 +6,7 @@ trap 'exit $?' HUP INT TERM
 
 set -e
 
-../ed -s $tmp <<EOF >/dev/null
+$EXEC ../ed -s $tmp <<EOF >/dev/null
 a
 1
 2
