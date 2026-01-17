@@ -1892,14 +1892,14 @@ execmacro(void)
 		return;
 	}
 
-	/* check for tail recursion */
-	for (ch = *input->s; ch > 0 && ch < UCHAR_MAX; ch = *input->s) {
+	for (ch = *input->s; ch > 0 && ch <= UCHAR_MAX; ch = *input->s) {
 		if (!isspace(ch))
 			break;
 		++input->s;
 	}
 
-	if (ch == '\0') {
+	/* check for tail recursion */
+	if (ch == '\0' && strcmp(input->buf, v.u.s) == 0) {
 		free(input->buf);
 		input->buf = input->s = v.u.s;
 		return;
