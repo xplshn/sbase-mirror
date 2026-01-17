@@ -1406,6 +1406,7 @@ pop(void)
 	v = *stack;
 	free(stack);
 	stack = v.next;
+	v.next = NULL;
 
 	return v;
 }
@@ -2057,6 +2058,7 @@ eval(void)
 	case 's':
 		rp = lookup(regname());
 		freeval(rp->val);
+		rp->val.type = NVAL;
 		rp->val = pop();
 		break;
 	case 'l':
@@ -2169,7 +2171,6 @@ dc(char *fname)
 	while (moreinput())
 		eval();
 
-	fclose(fp);
 	free(input);
 	input = NULL;
 }
