@@ -59,6 +59,8 @@ static int nested, inhome;
 static Macro macros[NESTED_MAX];
 int cflag, dflag, lflag, sflag;
 
+static char *dcprog = "dc";
+
 %}
 
 %union {
@@ -803,7 +805,7 @@ spawn(void)
 		dup(fds[0]);
 		close(fds[0]);
 		close(fds[1]);
-		execlp("dc", "dc", (char *) NULL);
+		execlp(dcprog, "dc", (char *) NULL);
 
 		/* it shouldn't happen */
 		write(3, errmsg, sizeof(errmsg)-1);
@@ -848,13 +850,16 @@ bc(char *fname)
 static void
 usage(void)
 {
-	eprintf("usage: %s [-cdls]\n", argv0);
+	eprintf("usage: %s [-p dc][-cdls]\n", argv0);
 }
 
 int
 main(int argc, char *argv[])
 {
 	ARGBEGIN {
+	case 'p':
+		dcprog = EARGF(usage);
+		break;
 	case 'c':
 		cflag = 1;
 		break;

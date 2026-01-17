@@ -21,7 +21,7 @@ cat <<EOF >$tmp
 .48609126058589107690
 EOF
 
-$EXEC ../bc ../bc.library <<EOF | diff -u $tmp -
+$EXEC ../bc -p ../dc ../bc.library <<EOF | diff -u $tmp -
 a(0)
 a(1)
 a(2)
