@@ -356,6 +356,7 @@ macro(int op)
 		inhome = 1;
 		break;
 	case DEF:
+		unwind = estrdup("");
 		inhome = 0;
 		d->id = funid(yytext);
 		d->flowid = macros[0].flowid;
@@ -391,8 +392,7 @@ decl(int type, char *list, char *id)
 	i2 = estrdup(id);
 	free(id);
 
-	if (!unwind)
-		unwind = estrdup("");
+	unwind = estrdup("");
 	if (!list)
 		list = estrdup("");
 
