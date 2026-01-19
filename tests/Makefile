@@ -3,4 +3,4 @@ all:
 
 clean:
 	rm -f test.log
-	rm -f tmp*
+	rm -rf tmp*
