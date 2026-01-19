@@ -392,7 +392,6 @@ decl(int type, char *list, char *id)
 	i2 = estrdup(id);
 	free(id);
 
-	unwind = estrdup("");
 	if (!list)
 		list = estrdup("");
 
