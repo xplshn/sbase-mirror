@@ -858,7 +858,7 @@ main(int argc, char *argv[])
 {
 	ARGBEGIN {
 	case 'p':
-		dcprog = EARGF(usage);
+		dcprog = EARGF(usage());
 		break;
 	case 'c':
 		cflag = 1;
