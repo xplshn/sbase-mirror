@@ -1541,6 +1541,7 @@ dupval(Val v)
 		nv.u.n = copy(&zero);
 		break;
 	}
+	nv.next = NULL;
 
 	return nv;
 }
@@ -2057,9 +2058,10 @@ eval(void)
 		break;
 	case 's':
 		rp = lookup(regname());
+		v1 = pop();
 		freeval(rp->val);
-		rp->val.type = NVAL;
-		rp->val = pop();
+		rp->val.u = v1.u;
+		rp->val.type = v1.type;
 		break;
 	case 'l':
 		rp = lookup(regname());
