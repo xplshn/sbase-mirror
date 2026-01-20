@@ -41,10 +41,19 @@ Enable yacc parser debugging output.
 Load the mathematical library
 that is loaded before any file from the command line.
 .It Fl s
-Suppresses the automatic printing of expression results.
-In this mode, only explicit
+Enable the extended mode.
+In this mode,
+the automatic printing of expression results is suppressed,
+and only explicit
 .Ic print
 statements produce output.
+Names of variables and functions can be longer than 1 character,
+but still constrained to lower case latin characters.
+The output of
+.Ar bc
+in this mode is suitable only for the suckless
+.Ar dc
+version.
 .El
 .Sh LANGUAGE
 .Ss Comments
