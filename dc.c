@@ -876,22 +876,48 @@ divscale(Num *divd, Num *divr)
 static Num *
 divnum(Num *a, Num *b)
 {
+	Num *r;
+	int siga, sigb;
+
+	siga = negative(a);
+	if (siga)
+		chsign(a);
+
+	sigb = negative(b);
+	if (sigb)
+		chsign(b);
+
 	if (!divscale(a, b))
 		return copy(&zero);
 
-	return divmod(a, b, NULL);
+	r = divmod(a, b, NULL);
+	if (siga ^ sigb)
+		chsign(r);
+	return r;
 }
 
 static Num *
 modnum(Num *a, Num *b)
 {
 	Num *mod, *c;
+	int siga, sigb;
+
+	siga = negative(a);
+	if (siga)
+		chsign(a);
+
+	sigb = negative(b);
+	if (sigb)
+		chsign(b);
 
 	if (!divscale(a, b))
 		return copy(&zero);
 
 	c = divmod(a, b, &mod);
 	freenum(c);
+
+	if (siga)
+		chsign(mod);
 
 	return mod;
 }
