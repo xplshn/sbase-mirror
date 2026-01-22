@@ -664,7 +664,8 @@ mulnum(Num *a, Num *b)
 	}
 	norm(c);
 
-	/* Adjust scale to max(a->scale, b->scale) while c is still positive */
+	if (sc < scale)
+		sc = scale;
 	sc = c->scale - sc;
 	if (sc > 0) {
 		div10(c, sc);
