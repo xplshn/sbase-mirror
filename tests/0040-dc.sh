@@ -1,15 +1,16 @@
 #!/bin/sh
 
-tmp=$$.tmp
+tmp1=$$.tmp1
+tmp2=$$.tmp2
 
-trap 'rm -f $tmp' EXIT
+trap 'rm -f $tmp1 $tmp2' EXIT
 trap 'exit $?' HUP INT TERM
 
 # Test x, >, !>, <, !<, =, != commands
 # Note: dc pops values and compares: first_popped OP second_popped
 # So "3 5 >a" pops 5 then 3, checks 5 > 3 (true)
 # And "5 3 >a" pops 3 then 5, checks 3 > 5 (false)
-$EXEC ../dc <<'EOF' >$tmp 2>&1
+($EXEC ../dc <<'EOF' 2>$tmp2
 [test 1:]pc [42p]x c
 [test 2:]pc 5 x p c
 [test 3:]pc []x c
@@ -52,11 +53,9 @@ $EXEC ../dc <<'EOF' >$tmp 2>&1
 [test 40:]pc [[NO]p]sa 5 >a
 [test 41:]pc [[NO]p]sa >a
 EOF
+cat $tmp2) > $tmp1
 
-diff -u - $tmp <<'EOF'
-../dc: stack empty
-../dc: stack empty
-../dc: stack empty
+diff -u - $tmp1 <<'EOF'
 test 1:
 42
 test 2:
@@ -132,4 +131,7 @@ test 38:
 test 39:
 test 40:
 test 41:
+../dc: stack empty
+../dc: stack empty
+../dc: stack empty
 EOF

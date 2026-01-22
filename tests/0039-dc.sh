@@ -1,12 +1,13 @@
 #!/bin/sh
 
-tmp=$$.tmp
+tmp1=$$.tmp1
+tmp2=$$.tmp2
 
-trap 'rm -f $tmp' EXIT
+trap 'rm -f $tmp1 $tmp2' EXIT
 trap 'exit $?' HUP INT TERM
 
 # Test s, l, S, L register commands
-$EXEC ../dc <<'EOF' >$tmp 2>&1
+($EXEC ../dc <<'EOF' 2>$tmp2
 [test 1:]pc 5 sa la p c
 [test 2:]pc lz p c
 [test 3:]pc 1 sb 2 lb p c
@@ -35,12 +36,9 @@ $EXEC ../dc <<'EOF' >$tmp 2>&1
 [test 26:]pc sC
 [test 27:]pc SD
 EOF
+cat $tmp2) > $tmp1
 
-diff -u - $tmp <<'EOF'
-../dc: stack register 'A' (101) is empty
-../dc: stack register 'B' (102) is empty
-../dc: stack empty
-../dc: stack empty
+diff -u - $tmp1 <<'EOF'
 test 1:
 5
 test 2:
@@ -98,4 +96,8 @@ test 24:
 test 25:
 test 26:
 test 27:
+../dc: stack register 'A' (101) is empty
+../dc: stack register 'B' (102) is empty
+../dc: stack empty
+../dc: stack empty
 EOF

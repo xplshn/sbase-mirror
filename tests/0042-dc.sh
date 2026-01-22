@@ -1,12 +1,13 @@
 #!/bin/sh
 
-tmp=$$.tmp
+tmp1=$$.tmp1
+tmp2=$$.tmp2
 
-trap 'rm -f $tmp' EXIT
+trap 'rm -f $tmp1 $tmp2' EXIT
 trap 'exit $?' HUP INT TERM
 
 # Test : and ; array commands
-$EXEC ../dc <<'EOF' >$tmp 2>&1
+($EXEC ../dc <<'EOF' 2>$tmp2
 [test 1:]pc 42 0:a 0;a p c
 [test 2:]pc 10 0:b 20 1:b 30 2:b 0;b p 1;b p 2;b p c
 [test 3:]pc 100 5:c 5;c p c
@@ -32,10 +33,9 @@ $EXEC ../dc <<'EOF' >$tmp 2>&1
 [test 23:]pc 10 0:v 20 1:v 1 Sv 2 Sv Lv p Lv p 0;v p 1;v p c
 [test 24:]pc 100 5:w 1 Sw 200 5:w 2 Sw 300 5:w 5;w p Lw p 5;w p Lw p 5;w p c
 EOF
+cat $tmp2) > $tmp1
 
-diff -u - $tmp <<'EOF'
-../dc: array index must fit in a positive integer
-../dc: array index must fit in a positive integer
+diff -u - $tmp1 <<'EOF'
 test 1:
 42
 test 2:
@@ -104,4 +104,6 @@ test 24:
 200
 1
 100
+../dc: array index must fit in a positive integer
+../dc: array index must fit in a positive integer
 EOF
