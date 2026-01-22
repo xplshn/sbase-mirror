@@ -15,8 +15,8 @@ trap "rm -f $proto" EXIT INT QUIT TERM
 (set -e
 echo d $prefix/bin $prefix/bin 755
 echo d $manprefix/man1 $manprefix/man1 755
-echo d $prefix/share/misc 755
-echo c bc.library $prefix/share/misc/bc.library
+echo d $prefix/share/misc $prefix/share/misc 755
+echo c bc.library $prefix/share/misc/bc.library 644
 ls -ld * make/* |\
 awk '
 /^-/ && $1 ~ /x/ {

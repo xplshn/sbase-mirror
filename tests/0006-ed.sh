@@ -1,6 +1,6 @@
 #!/bin/sh
 
-$EXEC ../ed -s /dev/null <<EOF | (read a && read b && test $a-$b == 1-2)
+$EXEC ../ed -s /dev/null <<EOF | (read a && read b && test $a-$b = 1-2)
 0a
 1
 2

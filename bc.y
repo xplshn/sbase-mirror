@@ -26,6 +26,7 @@ typedef struct macro Macro;
 struct macro {
 	int op;
 	int id;
+	char *name;
 	int flowid;
 	int nested;
 };
@@ -58,6 +59,8 @@ static jmp_buf recover;
 static int nested, inhome;
 static Macro macros[NESTED_MAX];
 int cflag, dflag, lflag, sflag;
+
+static char *dcprog = "dc";
 
 %}
 
@@ -346,6 +349,7 @@ macro(int op)
 	d = &macros[nested];
 	d->op = op;
 	d->nested = nested++;
+	d->name = NULL;
 
 	switch (op) {
 	case HOME:
@@ -354,8 +358,10 @@ macro(int op)
 		inhome = 1;
 		break;
 	case DEF:
+		unwind = estrdup("");
 		inhome = 0;
 		d->id = funid(yytext);
+		d->name = estrdup(yytext);
 		d->flowid = macros[0].flowid;
 		break;
 	default:
@@ -389,8 +395,6 @@ decl(int type, char *list, char *id)
 	i2 = estrdup(id);
 	free(id);
 
-	if (!unwind)
-		unwind = estrdup("");
 	if (!list)
 		list = estrdup("");
 
@@ -416,16 +420,25 @@ funcode(Macro *d, char *params, char *vars, char *body)
 {
 	char *s;
 
-	s = code("[%s%s%s%s]s%c",
-	         vars, params,
-	         body,
-	         retcode(code(" 0")),
-	         d->id);
+	if (strlen(d->name) > 1) {
+		s = code("[%s%s%s%s]s\"()%s\"",
+			 vars, params,
+			 body,
+			 retcode(code(" 0")),
+			 d->name);
+	} else {
+		s = code(sflag ? "[%s%s%s%s]s<%d>" : "[%s%s%s%s]s%c",
+			 vars, params,
+			 body,
+			 retcode(code(" 0")),
+			 d->id);
+		free(d->name);
+	}
+
 	free(unwind);
 	unwind = NULL;
 	nested--;
 	inhome = 0;
-
 
 	return s;
 }
@@ -447,14 +460,17 @@ forcode(Macro *d, char *init, char *cmp, char *inc, char *body)
 {
 	char *s;
 
-	s = code("[%s%ss.%s%c]s%c",
+	s = code(sflag ? "[%s%ss.%s<%d>]s<%d>" : "[%s%ss.%s%c]s%c",
 	         body,
 	         inc,
 	         estrdup(cmp),
 	         d->id, d->id);
 	writeout(s);
 
-	s = code("%ss.%s%c ", init, cmp, d->id);
+	s = code(sflag ? "%ss.%s<%d> " : "%ss.%s%c ",
+	         init,
+	         cmp,
+	         d->id);
 	nested--;
 
 	return s;
@@ -465,13 +481,14 @@ whilecode(Macro *d, char *cmp, char *body)
 {
 	char *s;
 
-	s = code("[%s%s%c]s%c",
+	s = code(sflag ? "[%s%s<%d>]s<%d>" : "[%s%s%c]s%c",
 	         body,
 	         estrdup(cmp),
 	         d->id, d->id);
 	writeout(s);
 
-	s = code("%s%c ", cmp, d->id);
+	s = code(sflag ? "%s<%d> " : "%s%c ",
+	         cmp, d->id);
 	nested--;
 
 	return s;
@@ -482,10 +499,12 @@ ifcode(Macro *d, char *cmp, char *body)
 {
 	char *s;
 
-	s = code("[%s]s%c", body, d->id);
+	s = code(sflag ? "[%s]s<%d>" : "[%s]s%c",
+	         body, d->id);
 	writeout(s);
 
-	s = code("%s%c ", cmp, d->id);
+	s = code(sflag ? "%s<%d> " : "%s%c ",
+	         cmp, d->id);
 	nested--;
 
 	return s;
@@ -504,19 +523,25 @@ retcode(char *expr)
 static char *
 ary(char *s)
 {
-	return code("%c", toupper(s[0]));
+	if (strlen(s) == 1)
+		return code("%c", toupper(s[0]));
+	return code("\"[]%s\"", estrdup(s));
 }
 
 static char *
 ftn(char *s)
 {
-	return code("%c", funid(s));
+	if (strlen(s) == 1)
+		return code(sflag ? "<%d>" : "%c", funid(s));
+	return code("\"()%s\"", estrdup(s));
 }
 
 static char *
 var(char *s)
 {
-	return code(s);
+	if (strlen(s) == 1)
+		return code(s);
+	return code("\"%s\"", estrdup(s));
 }
 
 static void
@@ -530,7 +555,7 @@ skipspaces(void)
 {
 	int ch;
 
-	while (isspace(ch = getc(filep))) {
+	while (isascii(ch = getc(filep)) && isspace(ch)) {
 		if (ch == '\n') {
 			lineno++;
 			break;
@@ -568,7 +593,7 @@ iden(int ch)
 	ungetc(ch, filep);
 	for (bp = yytext; bp < &yytext[BUFSIZ]; ++bp) {
 		ch = getc(filep);
-		if (!islower(ch))
+		if (!isascii || !islower(ch))
 			break;
 		*bp = ch;
 	}
@@ -585,11 +610,13 @@ iden(int ch)
 
 	for (p = keywords; p->str && strcmp(p->str, yytext); ++p)
 		;
+	if (p->str)
+		return p->token;
 
-	if (!p->str)
+	if (!sflag)
 		yyerror("invalid keyword");
-
-	return p->token;
+	strcpy(yylval.id, yytext);
+	return ID;
 }
 
 static char *
@@ -784,6 +811,7 @@ static void
 spawn(void)
 {
 	int fds[2];
+	char *par = sflag ? "-i" : NULL;
 	char errmsg[] = "bc:error execing dc\n";
 
 	if (pipe(fds) < 0)
@@ -803,7 +831,7 @@ spawn(void)
 		dup(fds[0]);
 		close(fds[0]);
 		close(fds[1]);
-		execlp("dc", "dc", (char *) NULL);
+		execlp(dcprog, "dc", par, (char *) NULL);
 
 		/* it shouldn't happen */
 		write(3, errmsg, sizeof(errmsg)-1);
@@ -848,13 +876,16 @@ bc(char *fname)
 static void
 usage(void)
 {
-	eprintf("usage: %s [-cdls]\n", argv0);
+	eprintf("usage: %s [-p dc][-cdls]\n", argv0);
 }
 
 int
 main(int argc, char *argv[])
 {
 	ARGBEGIN {
+	case 'p':
+		dcprog = EARGF(usage());
+		break;
 	case 'c':
 		cflag = 1;
 		break;
@@ -881,7 +912,7 @@ main(int argc, char *argv[])
 	if (!cflag)
 		spawn();
 	if (lflag)
-		bc(PREFIX "share/misc/bc.library");
+		bc(PREFIX "/share/misc/bc.library");
 
 	while (*argv)
 		bc(*argv++);

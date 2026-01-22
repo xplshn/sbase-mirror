@@ -876,22 +876,48 @@ divscale(Num *divd, Num *divr)
 static Num *
 divnum(Num *a, Num *b)
 {
+	Num *r;
+	int siga, sigb;
+
+	siga = negative(a);
+	if (siga)
+		chsign(a);
+
+	sigb = negative(b);
+	if (sigb)
+		chsign(b);
+
 	if (!divscale(a, b))
 		return copy(&zero);
 
-	return divmod(a, b, NULL);
+	r = divmod(a, b, NULL);
+	if (siga ^ sigb)
+		chsign(r);
+	return r;
 }
 
 static Num *
 modnum(Num *a, Num *b)
 {
 	Num *mod, *c;
+	int siga, sigb;
+
+	siga = negative(a);
+	if (siga)
+		chsign(a);
+
+	sigb = negative(b);
+	if (sigb)
+		chsign(b);
 
 	if (!divscale(a, b))
 		return copy(&zero);
 
 	c = divmod(a, b, &mod);
 	freenum(c);
+
+	if (siga)
+		chsign(mod);
 
 	return mod;
 }
@@ -1406,6 +1432,7 @@ pop(void)
 	v = *stack;
 	free(stack);
 	stack = v.next;
+	v.next = NULL;
 
 	return v;
 }
@@ -1540,6 +1567,7 @@ dupval(Val v)
 		nv.u.n = copy(&zero);
 		break;
 	}
+	nv.next = NULL;
 
 	return nv;
 }
@@ -1892,14 +1920,14 @@ execmacro(void)
 		return;
 	}
 
-	/* check for tail recursion */
-	for (ch = *input->s; ch > 0 && ch < UCHAR_MAX; ch = *input->s) {
+	for (ch = *input->s; ch > 0 && ch <= UCHAR_MAX; ch = *input->s) {
 		if (!isspace(ch))
 			break;
 		++input->s;
 	}
 
-	if (ch == '\0') {
+	/* check for tail recursion */
+	if (ch == '\0' && strcmp(input->buf, v.u.s) == 0) {
 		free(input->buf);
 		input->buf = input->s = v.u.s;
 		return;
@@ -2056,8 +2084,10 @@ eval(void)
 		break;
 	case 's':
 		rp = lookup(regname());
+		v1 = pop();
 		freeval(rp->val);
-		rp->val = pop();
+		rp->val.u = v1.u;
+		rp->val.type = v1.type;
 		break;
 	case 'l':
 		rp = lookup(regname());
@@ -2169,7 +2199,6 @@ dc(char *fname)
 	while (moreinput())
 		eval();
 
-	fclose(fp);
 	free(input);
 	input = NULL;
 }
