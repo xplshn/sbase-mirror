@@ -1,15 +1,12 @@
 #!/bin/sh
 
-tmp=$$.tmp
+tmp1=$$.tmp1
+tmp2=$$.tmp2
 
-trap 'rm -f $tmp' EXIT
+trap 'rm -f $tmp1 $tmp2' EXIT
 trap 'exit $?' HUP INT TERM
 
-cat <<'EOF' > $tmp
-../dc: stack empty
-../dc: Q command argument exceeded string execution depth
-../dc: Q command requires a number >= 0
-../dc: Q command argument exceeded string execution depth
+cat <<'EOF' > $tmp1
 test 1:
 test 2:
 test 3:
@@ -66,9 +63,14 @@ test 19:
 before-q
 test 20:
 equal
+../dc: stack empty
+../dc: Q command argument exceeded string execution depth
+../dc: Q command requires a number >= 0
+../dc: Q command argument exceeded string execution depth
 EOF
 
-($EXEC ../dc <<'EOF'
+(exec 2>$tmp2
+$EXEC ../dc <<'EOF'
 [test 1:]pc Q
 [test 2:]pc 1Q
 [test 3:]pc  _1Q
@@ -98,4 +100,5 @@ EOF
 $EXEC ../dc <<'EOF'
 [test 20:]pc [[equal]p q]sa 5 5 =a [not-printed]p
 EOF
-) 2>&1 | diff -u - $tmp
+cat $tmp2
+) | diff -u - $tmp1

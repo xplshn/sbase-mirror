@@ -593,7 +593,7 @@ iden(int ch)
 	ungetc(ch, filep);
 	for (bp = yytext; bp < &yytext[BUFSIZ]; ++bp) {
 		ch = getc(filep);
-		if (!isascii || !islower(ch))
+		if (!isascii(ch) || !islower(ch))
 			break;
 		*bp = ch;
 	}
