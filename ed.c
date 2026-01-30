@@ -69,7 +69,6 @@ static char *rhs;
 static char *lastmatch;
 static struct undo udata;
 static int newcmd;
-static int eol, bol;
 
 static sig_atomic_t intr, hup;
 
@@ -403,15 +402,11 @@ compile(int delim)
 	if (!isgraph(delim))
 		error("invalid pattern delimiter");
 
-	eol = bol = bracket = lastre.siz = 0;
+	bracket = lastre.siz = 0;
 	for (n = 0;; ++n) {
 		c = input();
 		if (c == delim && !bracket || c == '\0') {
 			break;
-		} else if (c == '^') {
-			bol = 1;
-		} else if (c == '$') {
-			eol = 1;
 		} else if (c == '\\') {
 			addchar(c, &lastre);
 			c = input();
@@ -433,7 +428,7 @@ compile(int delim)
 		regfree(pattern);
 	if (!pattern && (!(pattern = malloc(sizeof(*pattern)))))
 		error("out of memory");
-	if ((ret = regcomp(pattern, lastre.str, REG_NEWLINE))) {
+	if ((ret = regcomp(pattern, lastre.str, 0))) {
 		regerror(ret, pattern, buf, sizeof(buf));
 		error(buf);
 	}
@@ -446,7 +441,7 @@ match(int num)
 
 	lastmatch = gettxt(num);
 	text.str[text.siz - 2] = '\0';
-	r =!regexec(pattern, lastmatch, 10, matchs, 0);
+	r = !regexec(pattern, lastmatch, 10, matchs, 0);
 	text.str[text.siz - 2] = '\n';
 
 	return r;
@@ -456,13 +451,43 @@ static int
 rematch(int num)
 {
 	regoff_t off = matchs[0].rm_eo;
+	regmatch_t *m;
+	int r;
 
-	if (!regexec(pattern, lastmatch + off, 10, matchs, 0)) {
+	text.str[text.siz - 2] = '\0';
+	r = !regexec(pattern, lastmatch + off, 10, matchs, REG_NOTBOL);
+	text.str[text.siz - 2] = '\n';
+
+	if (!r)
+		return 0;
+
+	if (matchs[0].rm_eo > 0) {
 		lastmatch += off;
 		return 1;
 	}
 
-	return 0;
+	/* Zero width match was found at the end of the input, done */
+	if (lastmatch[off] == '\n') {
+		lastmatch += off;
+		return 0;
+	}
+
+	/* Zero width match at the current posiion, find the next one */
+	text.str[text.siz - 2] = '\0';
+	r = !regexec(pattern, lastmatch + off + 1, 10, matchs, REG_NOTBOL);
+	text.str[text.siz - 2] = '\n';
+
+	if (!r)
+		return 0;
+
+	/* Re-adjust matches to account for +1 in regexec */
+	for (m = matchs; m < &matchs[10]; m++) {
+		m->rm_so += 1;
+		m->rm_eo += 1;
+	}
+	lastmatch += off;
+
+	return 1;
 }
 
 static int
@@ -1238,12 +1263,10 @@ subline(int num, int nth)
 
 	string(&s);
 	i = changed = 0;
-	for (m = match(num); m; m = rematch(num)) {
+	for (m = match(num); m; m = (nth < 0 || i < nth) && rematch(num)) {
 		chksignals();
 		addpre(&s);
 		changed |= addsub(&s, nth, ++i);
-		if (eol || bol)
-			break;
 	}
 	if (!changed)
 		return;
