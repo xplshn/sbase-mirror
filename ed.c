@@ -751,6 +751,51 @@ chksignals(void)
 	}
 }
 
+static const char *
+expandcmd(void)
+{
+	static String cmd;
+	char *p;
+	int c, repl = 0;
+
+	skipblank();
+	if ((c = input()) != '!') {
+		back(c);
+		string(&cmd);
+	} else if (cmd.siz) {
+		--cmd.siz;
+		repl = 1;
+	} else {
+		error("no previous command");
+	}
+
+	while ((c = input()) != '\0') {
+		switch (c) {
+		case '%':
+			if (savfname[0] == '\0')
+				error("no current filename");
+			repl = 1;
+			for (p = savfname; *p; ++p)
+				addchar(*p, &cmd);
+			break;
+		case '\\':
+			c = input();
+			if (c != '%') {
+				back(c);
+				c = '\\';
+			}
+		default:
+			addchar(c, &cmd);
+		}
+	}
+	addchar('\0', &cmd);
+
+	if (repl)
+		puts(cmd.str);
+
+	return cmd.str;
+}
+
 static void
 dowrite(const char *fname, int trunc)
 {
@@ -768,8 +813,7 @@ dowrite(const char *fname, int trunc)
 
 	if(fname[0] == '!') {
 		sh = 1;
-		fname++;
-		if((fp = popen(fname, "w")) == NULL)
+		if((fp = popen(expandcmd(), "w")) == NULL)
 			error("bad exec");
 	} else {
 		sh = 0;
@@ -822,8 +866,7 @@ doread(const char *fname)
 
 	if(fname[0] == '!') {
 		sh = 1;
-		fname++;
-		if((fp = popen(fname, "r")) == NULL)
+		if((fp = popen(expandcmd(), "r")) == NULL)
 			error("bad exec");
 	} else if ((fp = fopen(fname, "r")) == NULL) {
 		error("cannot open input file");
@@ -931,6 +974,10 @@ getfname(int comm)
 	static char fname[FILENAME_MAX];
 
 	skipblank();
+	if ((c = input()) == '!') {
+		return strcpy(fname, "!");
+	}
+	back(c);
 	for (bp = fname; bp < &fname[FILENAME_MAX]; *bp++ = c) {
 		if ((c = input()) == '\0')
 			break;
@@ -1076,45 +1123,7 @@ copy(int where)
 static void
 execsh(void)
 {
-	static String cmd;
-	char *p;
-	int c, repl = 0;
-
-	skipblank();
-	if ((c = input()) != '!') {
-		back(c);
-		string(&cmd);
-	} else if (cmd.siz) {
-		--cmd.siz;
-		repl = 1;
-	} else {
-		error("no previous command");
-	}
-
-	while ((c = input()) != '\0') {
-		switch (c) {
-		case '%':
-			if (savfname[0] == '\0')
-				error("no current filename");
-			repl = 1;
-			for (p = savfname; *p; ++p)
-				addchar(*p, &cmd);
-			break;
-		case '\\':
-			c = input();
-			if (c != '%') {
-				back(c);
-				c = '\\';
-			}
-		default:
-			addchar(c, &cmd);
-		}
-	}
-	addchar('\0', &cmd);
-
-	if (repl)
-		puts(cmd.str);
-	system(cmd.str);
+	system(expandcmd());
 	if (optdiag)
 		puts("!");
 }
