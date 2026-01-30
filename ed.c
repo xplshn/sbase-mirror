@@ -836,7 +836,7 @@ dowrite(const char *fname, int trunc)
 		fp = NULL;
 	}
 
-	if(fname[0] == '!') {
+	if (fname[0] == '!') {
 		sh = 1;
 		if((fp = popen(expandcmd(), "w")) == NULL)
 			error("bad exec");
