@@ -274,7 +274,7 @@ writeout(char *s)
 {
 	if (write(1, s, strlen(s)) < 0)
 		goto err;
-	if (write(1, (char[]){'\n'}, 1) < 0)
+	if (write(1, "\n", 1) < 0)
 		goto err;
 	free(s);
 	return;
