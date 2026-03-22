@@ -208,7 +208,7 @@ all: scripts/make
 	+@$(SMAKE) $(BIN)
 
 scripts/make:
-	$(CC) -o $@ make/*.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ make/*.c
 
 $(BIN): $(LIB)
 

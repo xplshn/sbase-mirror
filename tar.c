@@ -471,8 +471,8 @@ bad:
 static void
 xt(int argc, char *argv[], int mode)
 {
-	long size, l;
-	char b[BLKSIZ], fname[l = PATH_MAX + 1], *p, *q = NULL;
+	long size;
+	char b[BLKSIZ], fname[PATH_MAX + 1], *p, *q = NULL;
 	int i, m, n;
 	int (*fn)(char *, ssize_t, char[BLKSIZ]) = (mode == 'x') ? unarchive : print;
 	struct timespec times[2];
@@ -491,7 +491,7 @@ xt(int argc, char *argv[], int mode)
 
 			/* Read header only up to size of fname buffer */
 			for (q = fname; q < fname+size; q += BLKSIZ) {
-				if (q + BLKSIZ >= fname + l)
+				if (q + BLKSIZ >= fname + sizeof fname)
 					eprintf("name exceeds buffer: %.*s\n", q-fname, fname);
 				eread(tarfd, q, BLKSIZ);
 			}
@@ -518,7 +518,7 @@ xt(int argc, char *argv[], int mode)
 		if (!q) {
 			m = sizeof h->prefix, n = sizeof h->name;
 			p = "/" + !h->prefix[0];
-			snprintf(fname, l, "%.*s%s%.*s", m, h->prefix, p, n, h->name);
+			snprintf(fname, sizeof fname, "%.*s%s%.*s", m, h->prefix, p, n, h->name);
 		}
 		q = NULL;
 
