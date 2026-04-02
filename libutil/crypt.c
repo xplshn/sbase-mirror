@@ -109,15 +109,18 @@ cryptcheck(int argc, char *argv[], struct crypt_ops *ops, uint8_t *md, size_t sz
 	}
 
 	if (formatsucks) {
-		weprintf("%d lines are improperly formatted\n", formatsucks);
+		weprintf("%d improperly formatted line%s\n",
+		         formatsucks, formatsucks > 1 ? "s" : "");
 		ret = 1;
 	}
 	if (noread) {
-		weprintf("%d listed file could not be read\n", noread);
+		weprintf("%d listed file%s could not be read\n",
+		         noread, noread > 1 ? "s" : "");
 		ret = 1;
 	}
 	if (nonmatch) {
-		weprintf("%d computed checksums did NOT match\n", nonmatch);
+		weprintf("%d computed checksum%s did NOT match\n",
+		         nonmatch, nonmatch > 1 ? "s" : "");
 		ret = 1;
 	}
 
