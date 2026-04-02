@@ -49,7 +49,8 @@ mdchecklist(FILE *listfp, struct crypt_ops *ops, uint8_t *md, size_t sz,
 	char *line = NULL, *file, *p;
 
 	while (getline(&line, &bufsiz, listfp) > 0) {
-		if (!(file = strstr(line, "  "))) {
+		file = strchr(line, ' ');
+		if (file == NULL || (file[1] != ' ' && file[1] != '*')) {
 			(*formatsucks)++;
 			continue;
 		}
